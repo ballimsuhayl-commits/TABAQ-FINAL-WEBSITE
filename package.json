@@ -1,15 +1,12 @@
 {
   "name": "tabaq-final-website",
-  "version": "208.0.0",
+  "version": "209.0.0",
   "private": true,
-  "description": "TABAQ final static website deployed on Vercel.",
+  "description": "TABAQ static website for Vercel deployment.",
   "scripts": {
-    "build": "echo \"TABAQ static site ready for Vercel\"",
-    "start": "npx serve ."
+    "build": "mkdir -p dist && cp index.html dist/index.html"
   },
   "engines": {
-    "node": ">=20"
-  },
-  "dependencies": {},
-  "devDependencies": {}
+    "node": "20.x"
+  }
 }

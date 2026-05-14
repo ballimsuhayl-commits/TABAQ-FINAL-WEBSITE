@@ -1,0 +1,40 @@
+TABAQ Rev207 — Final Ecommerce Conversion + Backend Commerce Structure
+
+Base: Rev206 Drop Kit Hover Runtime Fix.
+
+This revision preserves the working visual/motion base and adds a real commerce-ready structure:
+- front-end cart confidence polish
+- backend-aware secure checkout button
+- local Node server
+- product catalog API
+- cart validation API
+- Stripe Checkout Session endpoint
+- webhook endpoint for paid orders
+- local order storage for development
+- admin order endpoint with token protection
+
+Run the site only as a static preview:
+- Open index.html directly.
+- The design, cart, and local add-to-cart still work.
+- Real payment checkout will not run from file:// because payments require the backend.
+
+Run the commerce backend locally:
+1. Install Node.js 20 or newer.
+2. Open a terminal in this folder.
+3. Set STRIPE_SECRET_KEY in your environment.
+4. Run: npm start
+5. Open: http://localhost:8787
+6. Add a kit to cart and click Secure checkout.
+
+Important:
+- Do not share live Stripe secret keys.
+- Keep backend/.env.example as an example only.
+- backend/data/orders.json is development storage, not a production database.
+
+Preserved:
+- Rev203 Drop hero bottle theatre.
+- Rev204 Shop kit hover reveal.
+- Rev205 Coming Drop kit section.
+- Rev206 Drop kit hover fix.
+- Home, Shop, Layering, Lookbook, Why TABAQ, Product, cart and routing systems.
+- No iframe, no second renderer, no shell replacement.

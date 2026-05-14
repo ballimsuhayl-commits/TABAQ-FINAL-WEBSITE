@@ -1,0 +1,76 @@
+'use strict';
+
+const CURRENCY = (process.env.TABAQ_CURRENCY || 'zar').toLowerCase();
+
+const PRODUCTS = Object.freeze({
+  'clean-skin': Object.freeze({
+    id: 'clean-skin',
+    name: 'Clean Skin',
+    mood: 'Daily clean',
+    short: 'Fresh daily kit',
+    price: 890,
+    currency: CURRENCY,
+    image: '/assets/tabaq_asset_005.webp',
+    active: true,
+    layers: ['Body Mist', 'Eau de Parfum', 'Oil 01', 'Oil 02'],
+    description: 'Fresh, soft and clean. Easy to wear every day.'
+  }),
+  'soft-bloom': Object.freeze({
+    id: 'soft-bloom',
+    name: 'Soft Bloom',
+    mood: 'Soft floral',
+    short: 'Soft floral kit',
+    price: 890,
+    currency: CURRENCY,
+    image: '/assets/tabaq_asset_008.webp',
+    active: true,
+    layers: ['Body Mist', 'Eau de Parfum', 'Oil 01', 'Oil 02'],
+    description: 'Soft floral. Pretty, smooth and easy to gift.'
+  }),
+  'amber-haze': Object.freeze({
+    id: 'amber-haze',
+    name: 'Amber Haze',
+    mood: 'Warm evening',
+    short: 'Warm evening kit',
+    price: 950,
+    currency: CURRENCY,
+    image: '/assets/tabaq_asset_009.webp',
+    active: true,
+    layers: ['Body Mist', 'Eau de Parfum', 'Oil 01', 'Oil 02'],
+    description: 'Warm, smooth and easy for evenings.'
+  }),
+  'juice-drift': Object.freeze({
+    id: 'juice-drift',
+    name: 'Juice Drift',
+    mood: 'Bright social',
+    short: 'Bright social kit',
+    price: 890,
+    currency: CURRENCY,
+    image: '/assets/tabaq_asset_011.webp',
+    active: true,
+    layers: ['Body Mist', 'Eau de Parfum', 'Oil 01', 'Oil 02'],
+    description: 'Bright, fruity and social.'
+  })
+});
+
+function toMinorUnits(amount) {
+  return Math.round(Number(amount) * 100);
+}
+
+function publicCatalog() {
+  return Object.values(PRODUCTS).map((product) => ({
+    id: product.id,
+    name: product.name,
+    mood: product.mood,
+    short: product.short,
+    price: product.price,
+    currency: product.currency,
+    price_minor: toMinorUnits(product.price),
+    image: product.image,
+    active: product.active,
+    layers: product.layers,
+    description: product.description
+  }));
+}
+
+module.exports = { PRODUCTS, CURRENCY, publicCatalog, toMinorUnits };

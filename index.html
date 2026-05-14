@@ -1,157 +1,27 @@
-/* REV49 — DROP LIST CONVERSION SYSTEM START
-   One purpose: intercept Join Drop List CTAs and convert them into a real kit-specific drop access panel. */
-(function(){
-  const KITS = {
-    'clean-skin': {
-      id:'clean-skin', num:'01', name:'Clean Skin', price:'R890', color:'#d9f5e8', motion:'wood',
-      hook:'Fresh, soft, close. Your daily clean-scent uniform.',
-      included:[['01','Body Mist','50ml mineral lift'],['02','EDP','30ml clean skin accord'],['03','Oil 01','5ml soft cotton warmth'],['04','Oil 02','5ml quiet musk alternate']]
-    },
-    'soft-bloom': {
-      id:'soft-bloom', num:'02', name:'Soft Bloom', price:'R890', color:'#ffe0ed', motion:'concealed',
-      hook:'Petal-soft and pretty. The easy giftable floral.',
-      included:[['01','Body Mist','50ml pink petal lift'],['02','EDP','30ml floral heart'],['03','Oil 01','5ml powder-soft skin'],['04','Oil 02','5ml creamy alternate']]
-    },
-    'amber-haze': {
-      id:'amber-haze', num:'03', name:'Amber Haze', price:'R950', color:'#ffd9a6', motion:'brown',
-      hook:'Warm, smooth, evening-ready. A richer scent trail.',
-      included:[['01','Body Mist','50ml golden warmth'],['02','EDP','30ml amber signature'],['03','Oil 01','5ml resin-soft skin'],['04','Oil 02','5ml smoky alternate']]
-    },
-    'juice-drift': {
-      id:'juice-drift', num:'04', name:'Juice Drift', price:'R890', color:'#ffec6d', motion:'transparent',
-      hook:'Bright, juicy, social. The playful weekend kit.',
-      included:[['01','Body Mist','50ml citrus splash'],['02','EDP','30ml juicy identity'],['03','Oil 01','5ml soft fruit skin'],['04','Oil 02','5ml clean sweet alternate']]
-    }
-  };
-  const STORAGE_KEY = 'tabaq_rev43_drop_list';
-  const CONTACT_KEY = 'tabaq_rev49_drop_contacts';
-  let currentKitId = 'clean-skin';
+TABAQ Rev207 — Commerce setup
 
-  const $ = (sel, root=document) => root.querySelector(sel);
-  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
-  const panel = $('#rev49DropPanel');
-  if(!panel) return;
+This package includes the static TABAQ storefront plus a local Node backend for cart validation, order storage, and Stripe Checkout session creation.
 
-  function getSaved(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]')}catch(e){return []} }
-  function setSaved(id){
-    const saved = new Set(getSaved());
-    saved.add(id);
-    try{localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(saved)))}catch(e){}
-    updateDropButtons();
-  }
-  function updateDropButtons(){
-    const saved = new Set(getSaved());
-    $$('[data-rev43-add]').forEach(btn => {
-      const id = btn.getAttribute('data-rev43-add');
-      const active = saved.has(id);
-      btn.classList.toggle('is-added', active);
-      btn.textContent = active ? 'On Drop List' : (btn.dataset.rev51Label || btn.dataset.rev48Label || 'Join Drop List');
-    });
-  }
-  function saveContact(id){
-    const email = ($('#rev49DropEmail') || {}).value || '';
-    const whatsapp = ($('#rev49DropWhatsapp') || {}).value || '';
-    let contacts = [];
-    try{contacts = JSON.parse(localStorage.getItem(CONTACT_KEY)||'[]')}catch(e){contacts=[]}
-    contacts = contacts.filter(item => item && item.id !== id);
-    contacts.push({id, email:email.trim(), whatsapp:whatsapp.trim(), savedAt:new Date().toISOString()});
-    try{localStorage.setItem(CONTACT_KEY, JSON.stringify(contacts))}catch(e){}
-  }
-  function cloneKitPreview(kit){
-    const mount = $('#rev49DropKitMount');
-    if(!mount) return;
-    mount.innerHTML = '';
-    const source = document.querySelector(`.product-card[data-kit-id="${kit.id}"] .rev29-kit-preview`) || document.querySelector(`.rev43-commerce-card[data-kit-id="${kit.id}"] .rev29-kit-preview`);
-    if(source){
-      const clone = source.cloneNode(true);
-      clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
-      clone.querySelectorAll('button').forEach(btn => {
-        btn.type = 'button';
-        btn.setAttribute('tabindex','-1');
-        btn.classList.add('is-open');
-        btn.addEventListener('click', () => btn.classList.toggle('is-open'));
-      });
-      mount.appendChild(clone);
-      window.setTimeout(() => clone.querySelectorAll('.rev29-pack').forEach(pack => pack.classList.add('is-open')), 90);
-    } else {
-      mount.innerHTML = '<div style="font-weight:950;letter-spacing:-.04em;font-size:48px;line-height:.9">TABAQ<br/>KIT</div>';
-    }
-  }
-  function populatePanel(id){
-    const kit = KITS[id] || KITS['clean-skin'];
-    currentKitId = kit.id;
-    panel.classList.remove('is-confirmed');
-    panel.style.setProperty('--rev49-kit-color', kit.color);
-    const visual = $('#rev49DropVisual');
-    if(visual){ visual.dataset.num = kit.num; visual.style.setProperty('--rev49-kit-color', kit.color); }
-    const shell = $('#rev49DropShell');
-    if(shell) shell.style.setProperty('--rev49-kit-color', kit.color);
-    const kicker = $('#rev49DropKicker');
-    const title = $('#rev49DropTitle');
-    const summary = $('#rev49DropSummary');
-    const price = $('#rev49DropPrice');
-    const status = $('#rev49DropStatus');
-    const submit = $('#rev49DropSubmit');
-    const included = $('#rev49DropIncluded');
-    if(kicker) kicker.textContent = `Join drop list / ${kit.num}`;
-    if(title) title.textContent = kit.name;
-    if(summary) summary.textContent = kit.hook;
-    if(price) price.textContent = kit.price;
-    if(status) status.textContent = 'First access · kits launch first · singles come later';
-    if(submit) submit.textContent = `Join Drop List — ${kit.price}`;
-    if(included){
-      included.innerHTML = kit.included.map(item => `<span><em>${item[0]}</em><strong>${item[1]}</strong>${item[2]}</span>`).join('');
-    }
-    cloneKitPreview(kit);
-  }
-  function openPanel(id){
-    populatePanel(id);
-    if(typeof panel.showModal === 'function') panel.showModal(); else panel.setAttribute('open','');
-    window.setTimeout(() => {
-      const first = $('#rev49DropEmail') || $('[data-rev49-close]');
-      if(first && first.focus) first.focus({preventScroll:true});
-    }, 80);
-  }
-  function closePanel(){
-    if(typeof panel.close === 'function') panel.close(); else panel.removeAttribute('open');
-  }
+Run locally:
+1. Install Node.js 20 or newer.
+2. Open a terminal in this folder.
+3. Set your Stripe key:
+   - macOS/Linux: export STRIPE_SECRET_KEY=sk_test_your_key_here
+   - Windows PowerShell: $env:STRIPE_SECRET_KEY="sk_test_your_key_here"
+4. Optional: set STRIPE_WEBHOOK_SECRET and ADMIN_TOKEN.
+5. Run: npm start
+6. Open: http://localhost:8787
 
-  /* Capture phase deliberately prevents the older Rev43 add handler from swallowing the conversion moment. */
-  document.addEventListener('click', function(event){
-    const addBtn = event.target && event.target.closest && event.target.closest('[data-rev43-add]');
-    if(!addBtn) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    const id = addBtn.getAttribute('data-rev43-add') || 'clean-skin';
-    openPanel(id);
-  }, true);
+Useful endpoints:
+- GET  /health
+- GET  /api/catalog
+- POST /api/cart/validate
+- POST /api/checkout/session
+- POST /api/webhooks/stripe
+- GET  /api/orders/:order_id
+- GET  /api/admin/orders   requires Authorization: Bearer ADMIN_TOKEN
 
-  panel.addEventListener('click', function(event){
-    if(event.target === panel || event.target.closest('[data-rev49-close]')){ event.preventDefault(); closePanel(); }
-    const viewDrops = event.target.closest('[data-rev49-view-drops]');
-    if(viewDrops){
-      event.preventDefault();
-      closePanel();
-      location.hash = 'drop';
-      window.dispatchEvent(new CustomEvent('tabaq:page-change', {detail:{page:'drop', source:'rev49-drop-panel'}}));
-    }
-  });
-  const form = $('#rev49DropForm');
-  if(form){
-    form.addEventListener('submit', function(event){
-      event.preventDefault();
-      setSaved(currentKitId);
-      saveContact(currentKitId);
-      const kit = KITS[currentKitId] || KITS['clean-skin'];
-      const copy = $('#rev49DropSuccessCopy');
-      if(copy) copy.textContent = `${kit.name} is saved. You are on the early-access list for the ${kit.price} complete scent uniform.`;
-      panel.classList.add('is-confirmed');
-    });
-  }
-  window.addEventListener('keydown', function(event){ if(event.key === 'Escape' && panel.hasAttribute('open')) closePanel(); });
-  window.addEventListener('hashchange', updateDropButtons);
-  window.addEventListener('storage', updateDropButtons);
-  updateDropButtons();
-  window.TABAQ_REV49_DROP_LIST = { open:openPanel, kits:KITS };
-})();
-/* REV49 — DROP LIST CONVERSION SYSTEM END */
+Notes:
+- Opening index.html directly with file:// will still show the site and cart, but payment checkout requires the backend server.
+- The backend stores local development orders in backend/data/orders.json.
+- Do not commit or share live Stripe secret keys.

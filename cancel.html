@@ -1,0 +1,13 @@
+# TABAQ Rev207 backend settings
+# Copy this file to .env only if you use a dotenv loader, or set these as system environment variables.
+PORT=8787
+PUBLIC_SITE_URL=http://localhost:8787
+TABAQ_CURRENCY=zar
+
+# Required for real Stripe Checkout sessions.
+# Use your Stripe secret key from the Stripe Dashboard.
+STRIPE_SECRET_KEY=sk_test_replace_me
+STRIPE_WEBHOOK_SECRET=whsec_replace_me
+
+# Required only for /api/admin/orders.
+ADMIN_TOKEN=replace_with_a_long_random_admin_token

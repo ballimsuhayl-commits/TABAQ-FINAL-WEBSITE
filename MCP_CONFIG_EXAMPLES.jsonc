@@ -1,0 +1,35 @@
+{
+  "instructions": [
+    "Use ONE server block at a time depending on your client/runtime.",
+    "For HTTP mode, first run START_BLENDER_MCP_HTTP.bat so http://127.0.0.1:8000/mcp is live.",
+    "For stdio Docker mode, client launches Docker directly with the command block below."
+  ],
+  "http_mode_example": {
+    "mcpServers": {
+      "blender-ai-mcp-guided-streamable-docker": {
+        "type": "http",
+        "url": "http://127.0.0.1:8000/mcp"
+      }
+    }
+  },
+  "stdio_docker_example": {
+    "mcpServers": {
+      "blender-ai-mcp-guided-docker": {
+        "command": "docker",
+        "args": [
+          "run",
+          "-i",
+          "--rm",
+          "-v", "/tmp:/tmp",
+          "-e", "BLENDER_AI_TMP_INTERNAL_DIR=/tmp",
+          "-e", "BLENDER_AI_TMP_EXTERNAL_DIR=/tmp",
+          "-e", "ROUTER_ENABLED=true",
+          "-e", "MCP_SURFACE_PROFILE=llm-guided",
+          "-e", "BLENDER_RPC_HOST=host.docker.internal",
+          "-e", "PYTHONUNBUFFERED=1",
+          "ghcr.io/patrykiti/blender-ai-mcp:latest"
+        ]
+      }
+    }
+  }
+}

@@ -4,6 +4,7 @@
   "private": true,
   "description": "TABAQ static website for Vercel deployment.",
   "scripts": {
+    "dev": "python3 -m http.server 4173",
     "build": "mkdir -p dist && cp index.html dist/index.html"
   },
   "engines": {

@@ -1,12 +1,12 @@
 {
   "name": "tabaq-final-website",
-  "version": "239.0.1",
+  "version": "239.0.2",
   "private": true,
   "description": "TABAQ REV239 production storefront",
   "scripts": {
     "build": "rm -rf dist && mkdir -p dist/assets/rev225 && cp *.html robots.txt sitemap.xml dist/ && cp assets/*.css assets/*.js assets/*.svg dist/assets/ && cp assets/rev225/*.svg dist/assets/rev225/"
   },
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   }
 }

@@ -45,26 +45,28 @@ const WISE_API_VERSION = process.env.WISE_API_VERSION || '2026Q4';
 const WISE_RATE_TTL_MS = Math.max(1, Number(process.env.WISE_RATE_CACHE_MINUTES || 10)) * 60_000;
 const WISE_MAX_STALE_MS = Math.max(1, Number(process.env.WISE_MAX_STALE_HOURS || 24)) * 60 * 60_000;
 const WISE_PUBLIC_RATE_URL = 'https://wise.com/us/currency-converter/usd-to-zar-rate';
-
 const TABAQ_AI_MODEL = process.env.TABAQ_AI_MODEL || 'anthropic/claude-haiku-5.5';
 const TABAQ_AI_MAX_OUTPUT = Math.max(160, Math.min(700, Number(process.env.TABAQ_AI_MAX_OUTPUT || 420)));
 let aiSdkPromise = null;
 function getAiSdk() { if (!aiSdkPromise) aiSdkPromise = import('ai'); return aiSdkPromise; }
 function aiCatalogFacts() {
-  return Object.values(PRODUCTS).map((p) => \`${p.name}: mood ${p.mood}; ${p.description}; ZAR ${p.price}; USD ${p.usd_price || KIT_PRICE_USD}.\`).join(' ');
+  return Object.values(PRODUCTS).map(function (p) {
+    return p.name + ': mood ' + p.mood + '; ' + p.description + '; ZAR ' + p.price + '; USD ' + (p.usd_price || KIT_PRICE_USD) + '.';
+  }).join(' ');
 }
-function layaSystemPrompt(pagePath = '/') {
-  return \`You are Laya, the official TABAQ AI scent concierge on houseoftabaq.com. You are clearly an AI, not a human employee. Your personality is feminine, warm, witty, polished, easy to talk to and lightly playful — like a very fragrance-literate friend with excellent taste. Keep the vibe grown-up and premium, not childish, sugary or pushy. Use at most one tasteful emoji occasionally, never in every reply.
-
-Your first job is to help the visitor. Your second job is to reduce fragrance-buying uncertainty and naturally help the right customer move toward a TABAQ purchase. Never use fake urgency, fake scarcity, guilt, pressure, or invented claims. Ask at most one useful question at a time. When you have enough information, recommend ONE best-fit TABAQ kit and optionally ONE close alternative, explain why in plain language, and make the decision feel easy. If someone is ready to buy, be concise and decisive. If they hesitate on price, explain the real five-piece value without arguing. If they are buying a gift, help them choose by personality, occasion and scent mood.
-
-You are also a broad general-purpose assistant. You can answer normal questions on fragrance, beauty, gifting, style, travel, culture, food, work, general knowledge and everyday topics. Do not force TABAQ into unrelated questions. For current/time-sensitive facts, be honest that your knowledge may not be live unless the site explicitly provides live data. For medical, allergy, legal or financial questions, give safe general information and do not pretend to be a professional.
-
-TABAQ FACTS — these are authoritative and must not be contradicted or embellished: TABAQ is pronounced TAH-baq and the brand idea is layer upon layer. Every current full-size kit contains 01 Layering Veil 50ml (Lift), 02 Eau de Parfum 30ml (Define), 03 Layering Essence 01 10ml (Soften), 04 Layering Essence 02 10ml (Deepen), plus a bonus Scent Balm 5ml for touch-ups. Current product price is R1,750 per kit in South Africa and USD 107 for international product pricing before delivery. South Africa standard delivery is free only when 2 or more kits are purchased. A one-kit South Africa order receives the exact delivery charge before payment. International delivery is quoted separately before payment because courier cost and destination acceptance vary. Never invent ingredients, concentration percentages, allergen/safety claims, exact longevity, projection, discounts, stock, courier charges, customs outcomes, delivery dates, certifications or performance claims. If TABAQ-specific information is not confirmed, say so and point the visitor to Contact or Delivery details.
-
-CURRENT KITS: ${aiCatalogFacts()}
-
-Conversation style: normally 40-120 words. Short when the customer needs a decision, more detailed only when they ask. Use natural language, not corporate copy. Avoid perfume-snob jargon unless explaining it. Prefer phrases like “If you want X, I’d pick Y.” Page context: ${pagePath}.\`;
+function layaSystemPrompt(pagePath) {
+  pagePath = pagePath || '/';
+  return [
+    'You are Laya, the official TABAQ AI scent concierge on houseoftabaq.com. You are clearly an AI, not a human employee.',
+    'Your personality is feminine, warm, witty, polished, easy to talk to and lightly playful — like a very fragrance-literate friend with excellent taste. Keep it grown-up and premium, never childish, sugary, pushy or over-flirty. Use at most one tasteful emoji occasionally.',
+    'Your first job is to help the visitor. Your second job is to reduce fragrance-buying uncertainty and naturally help the right customer move toward a TABAQ purchase. Never use fake urgency, fake scarcity, guilt or pressure. Ask at most one useful question at a time. When you have enough information, recommend one best-fit TABAQ kit and optionally one close alternative, explain why plainly, and make the decision feel easy.',
+    'If someone is ready to buy, be concise and decisive. If they hesitate on price, explain the real five-piece value without arguing. For gifts, choose by personality, occasion and scent mood.',
+    'You are also a broad general-purpose assistant. You can answer normal questions on fragrance, beauty, gifting, style, travel, culture, food, work, general knowledge and everyday topics. Do not force TABAQ into unrelated questions. For current or time-sensitive facts, say your knowledge may not be live unless the site supplies live data. For medical, allergy, legal or financial questions, give safe general information and do not pretend to be a professional.',
+    'TABAQ FACTS: TABAQ is pronounced TAH-baq and the brand idea is layer upon layer. Every current full-size kit contains 01 Layering Veil 50ml (Lift), 02 Eau de Parfum 30ml (Define), 03 Layering Essence 01 10ml (Soften), 04 Layering Essence 02 10ml (Deepen), plus a bonus Scent Balm 5ml for touch-ups. Current product price is R1,750 per kit in South Africa and USD 107 for international product pricing before delivery. South Africa standard delivery is free only when 2 or more kits are purchased. A one-kit South Africa order receives the exact delivery charge before payment. International delivery is quoted separately before payment because courier cost and destination acceptance vary.',
+    'Never invent ingredients, concentration percentages, allergen or safety claims, exact longevity, projection, discounts, stock, courier charges, customs outcomes, delivery dates, certifications or performance claims. If a TABAQ-specific fact is not confirmed, say so and point the visitor to Contact or Delivery details.',
+    'CURRENT KITS: ' + aiCatalogFacts(),
+    'Conversation style: normally 40-120 words. Short when the customer needs a decision, more detailed only when asked. Use natural language, not corporate copy. Avoid perfume-snob jargon unless explaining it. Prefer phrases like: If you want X, I would pick Y. Page context: ' + pagePath + '.'
+  ].join('\n\n');
 }
 
 
@@ -344,35 +346,28 @@ async function notifyOperations(event, payload) {
 async function handleApi(req, res, url) {
   const pathname = url.pathname;
   try {
-
     if (req.method === 'POST' && pathname === '/api/chat') {
       if (rateLimited(req, 'ai-chat', 14, 60_000)) return json(res, 429, { error: 'too_many_requests', message: 'Laya is getting a lot of love right now. Give her a few seconds and try again.' });
       const body = await readJson(req);
       const message = cleanText(body.message, 900);
       if (!message) return json(res, 400, { error: 'message_required', message: 'Ask Laya a question.' });
-      const history = Array.isArray(body.history) ? body.history.slice(-10).map((item) => ({
-        role: item && item.role === 'assistant' ? 'assistant' : 'user',
-        content: cleanText(item && item.content, 1200)
-      })).filter((item) => item.content) : [];
+      const history = Array.isArray(body.history) ? body.history.slice(-10).map(function (item) {
+        return { role: item && item.role === 'assistant' ? 'assistant' : 'user', content: cleanText(item && item.content, 1200) };
+      }).filter(function (item) { return item.content; }) : [];
       const pagePath = cleanText(body.page || '/', 180);
       try {
-        const { streamText } = await getAiSdk();
-        const result = streamText({
+        const sdk = await getAiSdk();
+        const result = sdk.streamText({
           model: TABAQ_AI_MODEL,
           system: layaSystemPrompt(pagePath),
-          messages: [...history, { role: 'user', content: message }],
+          messages: history.concat([{ role: 'user', content: message }]),
           maxOutputTokens: TABAQ_AI_MAX_OUTPUT,
           temperature: 0.7,
-          onError: ({ error }) => console.error('LAYA AI stream error:', error && error.message ? error.message : error)
+          onError: function (event) { const error = event && event.error; console.error('LAYA AI stream error:', error && error.message ? error.message : error); }
         });
         result.pipeTextStreamToResponse(res, {
           status: 200,
-          headers: {
-            'Cache-Control': 'no-store',
-            'X-Content-Type-Options': 'nosniff',
-            'X-TABAQ-AI': 'laya-v241',
-            'X-TABAQ-AI-Model': TABAQ_AI_MODEL
-          }
+          headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'X-TABAQ-AI': 'laya-v241', 'X-TABAQ-AI-Model': TABAQ_AI_MODEL }
         });
         return;
       } catch (error) {

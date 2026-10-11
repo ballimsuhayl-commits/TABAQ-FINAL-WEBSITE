@@ -46,6 +46,8 @@ const WISE_RATE_TTL_MS = Math.max(1, Number(process.env.WISE_RATE_CACHE_MINUTES 
 const WISE_MAX_STALE_MS = Math.max(1, Number(process.env.WISE_MAX_STALE_HOURS || 24)) * 60 * 60_000;
 const WISE_PUBLIC_RATE_URL = 'https://wise.com/us/currency-converter/usd-to-zar-rate';
 const TABAQ_AI_MODEL = process.env.TABAQ_AI_MODEL || 'anthropic/claude-haiku-5.5';
+const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
 const TABAQ_AI_MAX_OUTPUT = Math.max(160, Math.min(700, Number(process.env.TABAQ_AI_MAX_OUTPUT || 420)));
 let aiSdkPromise = null;
 function getAiSdk() { if (!aiSdkPromise) aiSdkPromise = import('ai'); return aiSdkPromise; }
@@ -343,6 +345,60 @@ async function notifyOperations(event, payload) {
   } catch (_) { /* Notification is optional; stored records remain authoritative. */ }
 }
 
+async function groqChatText(system, messages) {
+  if (!GROQ_API_KEY) return null;
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${GROQ_API_KEY}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify({
+      model: GROQ_MODEL,
+      messages: [{ role: 'system', content: system }, ...messages],
+      temperature: 0.72,
+      max_completion_tokens: TABAQ_AI_MAX_OUTPUT,
+      stream: false
+    })
+  });
+  let payload = null;
+  try { payload = await response.json(); } catch (_) {}
+  if (!response.ok) {
+    const e = new Error(payload?.error?.message || `Groq returned ${response.status}.`);
+    e.statusCode = response.status;
+    e.code = 'groq_error';
+    throw e;
+  }
+  const text = payload?.choices?.[0]?.message?.content;
+  if (!text || !String(text).trim()) {
+    const e = new Error('Groq returned an empty response.');
+    e.statusCode = 502;
+    e.code = 'groq_empty_response';
+    throw e;
+  }
+  return String(text).trim();
+}
+
+async function gatewayChatText(system, messages) {
+  const sdk = await getAiSdk();
+  const result = await sdk.generateText({
+    model: TABAQ_AI_MODEL,
+    system,
+    messages,
+    maxOutputTokens: TABAQ_AI_MAX_OUTPUT,
+    temperature: 0.72,
+    providerOptions: { gateway: { zeroDataRetention: true, sort: 'ttft' } }
+  });
+  if (!result?.text || !String(result.text).trim()) {
+    const e = new Error('AI Gateway returned an empty response.');
+    e.statusCode = 502;
+    e.code = 'gateway_empty_response';
+    throw e;
+  }
+  return String(result.text).trim();
+}
+
 async function handleApi(req, res, url) {
   const pathname = url.pathname;
   try {
@@ -355,26 +411,53 @@ async function handleApi(req, res, url) {
         return { role: item && item.role === 'assistant' ? 'assistant' : 'user', content: cleanText(item && item.content, 1200) };
       }).filter(function (item) { return item.content; }) : [];
       const pagePath = cleanText(body.page || '/', 180);
-      try {
-        const sdk = await getAiSdk();
-        const result = sdk.streamText({
-          model: TABAQ_AI_MODEL,
-          system: layaSystemPrompt(pagePath),
-          messages: history.concat([{ role: 'user', content: message }]),
-          maxOutputTokens: TABAQ_AI_MAX_OUTPUT,
-          temperature: 0.72,
-          providerOptions: { gateway: { zeroDataRetention: true, sort: 'ttft' } },
-          onError: function (event) { const error = event && event.error; console.error('LAYA AI stream error:', error && error.message ? error.message : error); }
-        });
-        result.pipeTextStreamToResponse(res, {
-          status: 200,
-          headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'X-TABAQ-AI': 'laya-v241', 'X-TABAQ-AI-Model': TABAQ_AI_MODEL, 'X-TABAQ-AI-Auth': 'vercel-oidc-no-user-login' }
-        });
-        return;
-      } catch (error) {
-        console.error('LAYA AI unavailable:', error && error.message ? error.message : error);
-        return json(res, 503, { error: 'ai_temporarily_unavailable', message: 'Laya is having a tiny AI wobble. Please try again in a moment.' });
+      const messages = history.concat([{ role: 'user', content: message }]);
+      const system = layaSystemPrompt(pagePath);
+
+      let answer = '';
+      let provider = '';
+      let lastError = null;
+
+      if (GROQ_API_KEY) {
+        try {
+          answer = await groqChatText(system, messages);
+          provider = 'groq';
+        } catch (error) {
+          lastError = error;
+          console.error('LAYA Groq error:', error && error.message ? error.message : error);
+        }
       }
+
+      if (!answer) {
+        try {
+          answer = await gatewayChatText(system, messages);
+          provider = 'vercel-ai-gateway';
+        } catch (error) {
+          lastError = error;
+          console.error('LAYA Gateway error:', error && error.message ? error.message : error);
+        }
+      }
+
+      if (!answer) {
+        return json(res, 503, {
+          error: 'ai_temporarily_unavailable',
+          message: 'Laya is having a tiny AI wobble. Please try again in a moment.',
+          provider_hint: GROQ_API_KEY ? 'groq_and_gateway_unavailable' : 'add_GROQ_API_KEY_or_enable_vercel_ai_gateway',
+          detail: process.env.NODE_ENV === 'development' ? String(lastError?.message || '') : undefined
+        });
+      }
+
+      res.writeHead(200, {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-store',
+        'X-Content-Type-Options': 'nosniff',
+        'X-TABAQ-AI': 'laya-v241',
+        'X-TABAQ-AI-Provider': provider,
+        'X-TABAQ-AI-Model': provider === 'groq' ? GROQ_MODEL : TABAQ_AI_MODEL,
+        'X-TABAQ-AI-Auth': 'server-side-no-user-login'
+      });
+      res.end(answer);
+      return;
     }
 
     if (req.method === 'GET' && pathname === '/api/fx/usd-zar') {
@@ -558,7 +641,7 @@ function serveStatic(req, res, pathname) {
 
 async function handler(req, res) {
   const url = new URL(req.url, `http://${req.headers.host || `localhost:${PORT}`}`);
-  if (url.pathname === '/health') return json(res, 200, { ok: true, revision: 241, stripe_configured: Boolean(STRIPE_SECRET_KEY), admin_configured: Boolean(ADMIN_TOKEN), wise_api_configured: Boolean(WISE_API_TOKEN), commerce_layer: 'fixed-usd-107-plus-wise-shipping-reference', ai_concierge: true, ai_model: TABAQ_AI_MODEL, ai_auth: process.env.VERCEL ? 'vercel-oidc' : (process.env.AI_GATEWAY_API_KEY ? 'gateway-key' : 'local-unconfigured') });
+  if (url.pathname === '/health') return json(res, 200, { ok: true, revision: 241, stripe_configured: Boolean(STRIPE_SECRET_KEY), admin_configured: Boolean(ADMIN_TOKEN), wise_api_configured: Boolean(WISE_API_TOKEN), commerce_layer: 'fixed-usd-107-plus-wise-shipping-reference', ai_concierge: true, ai_model: GROQ_API_KEY ? GROQ_MODEL : TABAQ_AI_MODEL, ai_provider: GROQ_API_KEY ? 'groq' : 'vercel-ai-gateway', groq_configured: Boolean(GROQ_API_KEY), ai_auth: GROQ_API_KEY ? 'server-side-groq-key' : (process.env.VERCEL ? 'vercel-oidc' : (process.env.AI_GATEWAY_API_KEY ? 'gateway-key' : 'local-unconfigured')) });
   if (url.pathname.startsWith('/api/')) return handleApi(req, res, url);
   return serveStatic(req, res, url.pathname);
 }

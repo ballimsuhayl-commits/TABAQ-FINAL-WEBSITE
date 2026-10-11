@@ -1,12 +1,15 @@
 {
   "name": "tabaq-final-website",
-  "version": "239.0.2",
+  "version": "241.0.0",
   "private": true,
-  "description": "TABAQ REV239 production storefront",
+  "description": "TABAQ REV241 storefront with Laya AI scent concierge, commercial checkout, delivery quoting, mobile optimisation and full brand motion system.",
   "scripts": {
-    "build": "rm -rf dist && mkdir -p dist/assets/rev225 && cp *.html robots.txt sitemap.xml dist/ && cp assets/*.css assets/*.js assets/*.svg dist/assets/ && cp assets/rev225/*.svg dist/assets/rev225/"
+    "build": "rm -rf dist && mkdir -p dist && cp *.html robots.txt sitemap.xml dist/ && cp -R assets dist/assets"
   },
   "engines": {
     "node": "24.x"
+  },
+  "dependencies": {
+    "ai": "^7.0.0"
   }
 }

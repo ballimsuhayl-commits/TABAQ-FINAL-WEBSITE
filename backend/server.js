@@ -46,6 +46,28 @@ const WISE_RATE_TTL_MS = Math.max(1, Number(process.env.WISE_RATE_CACHE_MINUTES 
 const WISE_MAX_STALE_MS = Math.max(1, Number(process.env.WISE_MAX_STALE_HOURS || 24)) * 60 * 60_000;
 const WISE_PUBLIC_RATE_URL = 'https://wise.com/us/currency-converter/usd-to-zar-rate';
 
+const TABAQ_AI_MODEL = process.env.TABAQ_AI_MODEL || 'anthropic/claude-haiku-5.5';
+const TABAQ_AI_MAX_OUTPUT = Math.max(160, Math.min(700, Number(process.env.TABAQ_AI_MAX_OUTPUT || 420)));
+let aiSdkPromise = null;
+function getAiSdk() { if (!aiSdkPromise) aiSdkPromise = import('ai'); return aiSdkPromise; }
+function aiCatalogFacts() {
+  return Object.values(PRODUCTS).map((p) => \`${p.name}: mood ${p.mood}; ${p.description}; ZAR ${p.price}; USD ${p.usd_price || KIT_PRICE_USD}.\`).join(' ');
+}
+function layaSystemPrompt(pagePath = '/') {
+  return \`You are Laya, the official TABAQ AI scent concierge on houseoftabaq.com. You are clearly an AI, not a human employee. Your personality is feminine, warm, witty, polished, easy to talk to and lightly playful — like a very fragrance-literate friend with excellent taste. Keep the vibe grown-up and premium, not childish, sugary or pushy. Use at most one tasteful emoji occasionally, never in every reply.
+
+Your first job is to help the visitor. Your second job is to reduce fragrance-buying uncertainty and naturally help the right customer move toward a TABAQ purchase. Never use fake urgency, fake scarcity, guilt, pressure, or invented claims. Ask at most one useful question at a time. When you have enough information, recommend ONE best-fit TABAQ kit and optionally ONE close alternative, explain why in plain language, and make the decision feel easy. If someone is ready to buy, be concise and decisive. If they hesitate on price, explain the real five-piece value without arguing. If they are buying a gift, help them choose by personality, occasion and scent mood.
+
+You are also a broad general-purpose assistant. You can answer normal questions on fragrance, beauty, gifting, style, travel, culture, food, work, general knowledge and everyday topics. Do not force TABAQ into unrelated questions. For current/time-sensitive facts, be honest that your knowledge may not be live unless the site explicitly provides live data. For medical, allergy, legal or financial questions, give safe general information and do not pretend to be a professional.
+
+TABAQ FACTS — these are authoritative and must not be contradicted or embellished: TABAQ is pronounced TAH-baq and the brand idea is layer upon layer. Every current full-size kit contains 01 Layering Veil 50ml (Lift), 02 Eau de Parfum 30ml (Define), 03 Layering Essence 01 10ml (Soften), 04 Layering Essence 02 10ml (Deepen), plus a bonus Scent Balm 5ml for touch-ups. Current product price is R1,750 per kit in South Africa and USD 107 for international product pricing before delivery. South Africa standard delivery is free only when 2 or more kits are purchased. A one-kit South Africa order receives the exact delivery charge before payment. International delivery is quoted separately before payment because courier cost and destination acceptance vary. Never invent ingredients, concentration percentages, allergen/safety claims, exact longevity, projection, discounts, stock, courier charges, customs outcomes, delivery dates, certifications or performance claims. If TABAQ-specific information is not confirmed, say so and point the visitor to Contact or Delivery details.
+
+CURRENT KITS: ${aiCatalogFacts()}
+
+Conversation style: normally 40-120 words. Short when the customer needs a decision, more detailed only when they ask. Use natural language, not corporate copy. Avoid perfume-snob jargon unless explaining it. Prefer phrases like “If you want X, I’d pick Y.” Page context: ${pagePath}.\`;
+}
+
+
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
@@ -322,6 +344,43 @@ async function notifyOperations(event, payload) {
 async function handleApi(req, res, url) {
   const pathname = url.pathname;
   try {
+
+    if (req.method === 'POST' && pathname === '/api/chat') {
+      if (rateLimited(req, 'ai-chat', 14, 60_000)) return json(res, 429, { error: 'too_many_requests', message: 'Laya is getting a lot of love right now. Give her a few seconds and try again.' });
+      const body = await readJson(req);
+      const message = cleanText(body.message, 900);
+      if (!message) return json(res, 400, { error: 'message_required', message: 'Ask Laya a question.' });
+      const history = Array.isArray(body.history) ? body.history.slice(-10).map((item) => ({
+        role: item && item.role === 'assistant' ? 'assistant' : 'user',
+        content: cleanText(item && item.content, 1200)
+      })).filter((item) => item.content) : [];
+      const pagePath = cleanText(body.page || '/', 180);
+      try {
+        const { streamText } = await getAiSdk();
+        const result = streamText({
+          model: TABAQ_AI_MODEL,
+          system: layaSystemPrompt(pagePath),
+          messages: [...history, { role: 'user', content: message }],
+          maxOutputTokens: TABAQ_AI_MAX_OUTPUT,
+          temperature: 0.7,
+          onError: ({ error }) => console.error('LAYA AI stream error:', error && error.message ? error.message : error)
+        });
+        result.pipeTextStreamToResponse(res, {
+          status: 200,
+          headers: {
+            'Cache-Control': 'no-store',
+            'X-Content-Type-Options': 'nosniff',
+            'X-TABAQ-AI': 'laya-v241',
+            'X-TABAQ-AI-Model': TABAQ_AI_MODEL
+          }
+        });
+        return;
+      } catch (error) {
+        console.error('LAYA AI unavailable:', error && error.message ? error.message : error);
+        return json(res, 503, { error: 'ai_temporarily_unavailable', message: 'Laya is having a tiny AI wobble. Please try again in a moment.' });
+      }
+    }
+
     if (req.method === 'GET' && pathname === '/api/fx/usd-zar') {
       if (rateLimited(req, 'fx', 60, 60_000)) return json(res, 429, { error: 'too_many_requests', message: 'Please wait a moment and try again.' });
       const fx = await getWiseUsdZarRate();
@@ -503,7 +562,7 @@ function serveStatic(req, res, pathname) {
 
 async function handler(req, res) {
   const url = new URL(req.url, `http://${req.headers.host || `localhost:${PORT}`}`);
-  if (url.pathname === '/health') return json(res, 200, { ok: true, revision: 239, stripe_configured: Boolean(STRIPE_SECRET_KEY), admin_configured: Boolean(ADMIN_TOKEN), wise_api_configured: Boolean(WISE_API_TOKEN), commerce_layer: 'fixed-usd-107-plus-wise-shipping-reference' });
+  if (url.pathname === '/health') return json(res, 200, { ok: true, revision: 241, stripe_configured: Boolean(STRIPE_SECRET_KEY), admin_configured: Boolean(ADMIN_TOKEN), wise_api_configured: Boolean(WISE_API_TOKEN), commerce_layer: 'fixed-usd-107-plus-wise-shipping-reference', ai_concierge: true, ai_model: TABAQ_AI_MODEL, ai_auth: process.env.VERCEL ? 'vercel-oidc' : (process.env.AI_GATEWAY_API_KEY ? 'gateway-key' : 'local-unconfigured') });
   if (url.pathname.startsWith('/api/')) return handleApi(req, res, url);
   return serveStatic(req, res, url.pathname);
 }
@@ -511,7 +570,7 @@ async function handler(req, res) {
 ensureStore();
 if (require.main === module) {
   http.createServer(handler).listen(PORT, () => {
-    console.log(`TABAQ Rev239 commerce server running at http://localhost:${PORT}`);
+    console.log(`TABAQ Rev241 commerce + Laya AI server running at http://localhost:${PORT}`);
     console.log(`Stripe configured: ${STRIPE_SECRET_KEY ? 'yes' : 'no'}`);
     console.log(`Operations token configured: ${ADMIN_TOKEN ? 'yes' : 'no'}`);
     console.log(`Wise API token configured: ${WISE_API_TOKEN ? 'yes' : 'no — public Wise converter fallback will be used'}`);

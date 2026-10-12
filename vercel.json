@@ -1,17 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "cleanUrls": true,
   "trailingSlash": false,
-  "functions": {
-    "api/*.js": {
-      "maxDuration": 30
-    }
-  },
-  "redirects": [
+  "rewrites": [
     {
-      "source": "/backend/:path*",
-      "destination": "/404.html",
-      "permanent": false
+      "source": "/api/chat",
+      "destination": "https://tabaq-laya-api.vercel.app/api/chat"
+    },
+    {
+      "source": "/api/laya-health",
+      "destination": "https://tabaq-laya-api.vercel.app/api/health"
     }
   ],
   "headers": [

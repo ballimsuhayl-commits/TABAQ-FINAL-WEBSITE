@@ -1,8 +1,8 @@
 {
   "name": "tabaq-final-website",
-  "version": "241.0.0",
+  "version": "244.0.0",
   "private": true,
-  "description": "TABAQ REV241 storefront with Laya AI scent concierge, commercial checkout, delivery quoting, mobile optimisation and full brand motion system.",
+  "description": "TABAQ REV244 storefront with Laya scent concierge, omnichannel messaging hooks, commerce, delivery quoting, mobile optimisation and brand motion.",
   "scripts": {
     "build": "rm -rf dist && mkdir -p dist && cp *.html robots.txt sitemap.xml dist/ && cp -R assets dist/assets"
   },

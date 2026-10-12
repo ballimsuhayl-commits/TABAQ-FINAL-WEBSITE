@@ -1,8 +1,19 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 30
+    }
+  },
+  "redirects": [
+    {
+      "source": "/backend/:path*",
+      "destination": "/404.html",
+      "permanent": false
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

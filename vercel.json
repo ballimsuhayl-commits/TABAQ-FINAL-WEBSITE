@@ -12,14 +12,40 @@
     {
       "source": "/api/laya-health",
       "destination": "https://tabaq-laya-api.vercel.app/api/health"
+    },
+    {
+      "source": "/api/channels/meta",
+      "destination": "https://tabaq-laya-api.vercel.app/api/meta"
+    },
+    {
+      "source": "/api/channels/telegram",
+      "destination": "https://tabaq-laya-api.vercel.app/api/telegram"
+    },
+    {
+      "source": "/api/channels/wechat",
+      "destination": "https://tabaq-laya-api.vercel.app/api/wechat"
+    },
+    {
+      "source": "/api/channels/bridge",
+      "destination": "https://tabaq-laya-api.vercel.app/api/bridge"
+    },
+    {
+      "source": "/api/channels/status",
+      "destination": "https://tabaq-laya-api.vercel.app/api/status"
     }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        {"key":"X-Content-Type-Options","value":"nosniff"},
-        {"key":"Referrer-Policy","value":"strict-origin-when-cross-origin"}
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
       ]
     }
   ]

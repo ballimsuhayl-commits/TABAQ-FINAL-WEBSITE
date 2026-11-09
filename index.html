@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="rev247-layer-static">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -390,6 +390,12 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}button{color:inhe
 .original-four-finish{max-width:1500px;margin:0 auto;padding:74px 28px 94px;display:grid;grid-template-columns:.8fr 1.2fr;gap:40px;align-items:center}.original-four-finish h3{font-size:clamp(38px,4.5vw,68px);line-height:.9;letter-spacing:-.055em;margin:0;text-transform:uppercase}.original-four-finish__bottles{min-height:390px;position:relative;background:#111;border:1px solid #2c2c2c;overflow:hidden}.original-four-finish__bottles img{width:auto!important;position:absolute;bottom:6%;max-height:76%;filter:drop-shadow(0 25px 20px rgba(0,0,0,.26));transform-origin:50% 88%}.original-four-finish__bottles img:nth-child(1){left:12%;height:68%}.original-four-finish__bottles img:nth-child(2){left:36%;height:71%}.original-four-finish__bottles img:nth-child(3){left:64%;height:66%}.original-four-finish__bottles img:nth-child(4){left:79%;height:66%}
 @media(max-width:900px){.original-bottle-theatre,.original-bottle-theatre--reverse,.original-four-finish{grid-template-columns:1fr}.original-bottle-theatre--reverse .original-theatre-copy,.original-bottle-theatre--reverse .original-theatre-stage{order:initial}.original-theatre-copy{min-height:auto}.original-theatre-stage{min-height:390px}.original-scene-grid{grid-template-columns:1fr;height:100svh;padding:78px 14px 34px}.original-scene-copy{position:absolute;left:20px;bottom:34px;z-index:6;padding:0;max-width:52vw}.original-scene-copy h3{font-size:clamp(48px,11vw,78px)}.original-scene-step{font-size:42px}.original-scene-side{display:none}.original-artboard{width:min(86vw,590px);height:min(78svh,760px)}.original-four-finish__bottles{min-height:330px}}
 .rev227-gsap-missing .layer-motion-bottle{opacity:1!important;transform:none!important}.rev227-gsap-missing .drop-floater{opacity:1!important;transform:none!important}
+/* REV247 — preserve original sprite presentation when ScrollTrigger/CDN/reduced-motion is unavailable. */
+html.rev247-layer-static .original-artboard .original-model-empty,
+html.rev247-layer-static .original-artboard .original-product-drop{opacity:0!important}
+html.rev247-layer-static .original-artboard .original-model-final{opacity:1!important;transform:none!important;visibility:visible!important}
+html.rev247-layer-static .original-artboard .original-landing-ring{opacity:0!important}
+
 @media(max-width:700px){.original-bottle-theatre{padding:18px 14px 64px}.original-theatre-copy{padding:24px}.original-theatre-stage{min-height:330px}.original-theatre-bottle--mist{left:8%;height:62%}.original-theatre-bottle--edp{left:33%;height:64%}.original-theatre-bottle--oil1{left:64%;height:60%}.original-theatre-bottle--oil2{left:80%;height:60%}.original-layering-intro{padding:64px 14px 36px}.original-scroll-scene{height:220svh;min-height:1300px}.original-four-finish{padding:56px 14px 70px}.hero-bottle--mist{left:5%;width:25%}.hero-bottle--edp{left:30%;width:30%}.hero-bottle--oil1{left:64%;width:11%}.hero-bottle--oil2{left:80%;width:11%}}
 
 
@@ -646,21 +652,21 @@ button,a,input,select,textarea{touch-action:manipulation}
     <section class="original-scroll-scene" data-original-scene data-fall="88" data-rot="-13" data-x="-5" style="--accent:#d9982d">
       <div class="original-scene-sticky"><div class="original-scene-grid">
         <aside class="original-scene-copy"><span class="original-scene-step">Step 01</span><h3>LAYERING VEIL</h3><p>mist lightly across the collarbone, chest or clothing line</p><div>Lift the opening</div></aside>
-        <figure class="original-artboard"><img class="original-model-empty" src="assets/tabaq_asset_013.webp" alt="" width="1024" height="1536" decoding="async" loading="lazy"><img class="original-product-drop" src="assets/tabaq_asset_015.webp" alt="TABAQ Layering Veil falling into hand" width="1024" height="1536" decoding="async" loading="lazy"><span class="original-landing-ring"></span><img class="original-model-final" src="assets/tabaq_asset_014.webp" alt="Layering Veil settled in hand" width="1024" height="1536" decoding="async" loading="lazy"></figure>
+        <figure class="original-artboard"><img class="original-model-empty" src="assets/tabaq_asset_013.webp" alt="" width="1024" height="1536" decoding="async" loading="eager"><img class="original-product-drop" src="assets/tabaq_asset_015.webp" alt="TABAQ Layering Veil falling into hand" width="1024" height="1536" decoding="async" loading="eager"><span class="original-landing-ring"></span><img class="original-model-final" src="assets/tabaq_asset_014.webp" alt="Layering Veil settled in hand" width="1024" height="1536" decoding="async" loading="eager"></figure>
         <aside class="original-scene-side">LAYERING VEIL / LIFT</aside>
       </div></div>
     </section>
     <section class="original-scroll-scene" data-original-scene data-fall="86" data-rot="11" data-x="4" style="--accent:#ec7b65">
       <div class="original-scene-sticky"><div class="original-scene-grid">
         <aside class="original-scene-copy"><span class="original-scene-step">Step 02</span><h3>EAU DE PARFUM</h3><p>apply at the neck or wrists to define the main scent identity</p><div>Define the signature</div></aside>
-        <figure class="original-artboard"><img class="original-model-empty" src="assets/tabaq_asset_016.webp" alt="" width="1024" height="1536" decoding="async" loading="lazy"><img class="original-product-drop" src="assets/tabaq_asset_018.webp" alt="TABAQ Eau de Parfum falling into hand" width="1024" height="1536" decoding="async" loading="lazy"><span class="original-landing-ring"></span><img class="original-model-final" src="assets/tabaq_asset_017.webp" alt="Eau de Parfum settled in hand" width="1024" height="1536" decoding="async" loading="lazy"></figure>
+        <figure class="original-artboard"><img class="original-model-empty" src="assets/tabaq_asset_016.webp" alt="" width="1024" height="1536" decoding="async" loading="eager"><img class="original-product-drop" src="assets/tabaq_asset_018.webp" alt="TABAQ Eau de Parfum falling into hand" width="1024" height="1536" decoding="async" loading="eager"><span class="original-landing-ring"></span><img class="original-model-final" src="assets/tabaq_asset_017.webp" alt="Eau de Parfum settled in hand" width="1024" height="1536" decoding="async" loading="eager"></figure>
         <aside class="original-scene-side">EAU DE PARFUM / DEFINE</aside>
       </div></div>
     </section>
     <section class="original-scroll-scene" data-original-scene data-fall="72" data-rot="-8" data-x="0" style="--accent:#78a844">
       <div class="original-scene-sticky"><div class="original-scene-grid">
         <aside class="original-scene-copy"><span class="original-scene-step">Step 03</span><h3>LAYERING ESSENCE 01</h3><p>roll onto pulse points to soften the fragrance into the skin</p><div>Soften the finish</div></aside>
-        <figure class="original-artboard"><img class="original-model-empty" src="assets/tabaq_asset_019.webp" alt="" width="1024" height="1536" decoding="async" loading="lazy"><img class="original-product-drop" src="assets/tabaq_asset_021.webp" alt="TABAQ Layering Essence 01 falling into hand" width="1024" height="1536" decoding="async" loading="lazy"><span class="original-landing-ring"></span><img class="original-model-final" src="assets/tabaq_asset_020.webp" alt="Layering Essence 01 settled in hand" width="1024" height="1536" decoding="async" loading="lazy"></figure>
+        <figure class="original-artboard"><img class="original-model-empty" src="assets/tabaq_asset_019.webp" alt="" width="1024" height="1536" decoding="async" loading="eager"><img class="original-product-drop" src="assets/tabaq_asset_021.webp" alt="TABAQ Layering Essence 01 falling into hand" width="1024" height="1536" decoding="async" loading="eager"><span class="original-landing-ring"></span><img class="original-model-final" src="assets/tabaq_asset_020.webp" alt="Layering Essence 01 settled in hand" width="1024" height="1536" decoding="async" loading="eager"></figure>
         <aside class="original-scene-side">LAYERING ESSENCE 01 / SOFTEN</aside>
       </div></div>
     </section>
@@ -1045,7 +1051,14 @@ document.addEventListener('visibilitychange',()=>{if(window.gsap&&window.gsap.gl
   function qsa(s,c){return Array.prototype.slice.call((c||document).querySelectorAll(s));}
   function reduce(){return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);}
   function onReady(fn){if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fn,{once:true});else fn();}
-  function waitForGsap(fn,tries){tries=tries||0;if(window.gsap){fn();return;}if(tries<40){setTimeout(function(){waitForGsap(fn,tries+1)},80);return;}document.documentElement.classList.add('rev227-gsap-missing');}
+  /* REV247 — GSAP alone is insufficient: the layering timelines REQUIRE ScrollTrigger. */
+  function waitForGsap(fn,tries){
+    tries=tries||0;
+    if(reduce()||(navigator.connection&&navigator.connection.saveData))return;
+    if(window.gsap&&window.ScrollTrigger){fn();return;}
+    if(tries<90){setTimeout(function(){waitForGsap(fn,tries+1)},80);return;}
+    document.documentElement.classList.add('rev227-gsap-missing','rev247-layer-static');
+  }
   setTimeout(function(){if(!window.gsap||!window.ScrollTrigger)document.documentElement.classList.add('rev238-motion-failsafe');},1400);
 
   function initHero(){
@@ -1151,6 +1164,8 @@ document.addEventListener('visibilitychange',()=>{if(window.gsap&&window.gsap.gl
       tl.to(copy,{y:-8,duration:.18,ease:'none'},0).to(product,{opacity:1,duration:.06,ease:'none'},.02).to(product,{y:0,x:0,rotation:0,scale:1,duration:.54,ease:'power2.out'},.06).to(product,{y:8,duration:.08,ease:'sine.inOut'},.56).to(product,{y:0,duration:.09,ease:'back.out(1.25)'},.64).to(ring,{opacity:.46,scale:1.15,duration:.1,ease:'power1.out'},.58).to(ring,{opacity:0,scale:1.35,duration:.14,ease:'power1.in'},.68).to(empty,{opacity:.08,scale:1.012,duration:.16,ease:'none'},.66).to(final,{opacity:1,scale:1.012,duration:.18,ease:'power1.out'},.68).to(product,{opacity:.06,scale:.985,duration:.12,ease:'none'},.72).to(copy,{y:-14,duration:.18,ease:'none'},.76);
     });
     var finish=document.querySelector('[data-original-finish]');if(finish){var bs=qsa('img',finish);gs.set(bs,{opacity:0,y:68,rotation:function(i){return[-8,7,-6,6][i]||0},scale:.92});gs.to(bs,{opacity:1,y:0,rotation:0,scale:1,duration:.95,stagger:.1,ease:'back.out(1.3)',scrollTrigger:{trigger:finish,start:'top 78%',once:true}});bs.forEach(function(b,i){gs.to(b,{y:i%2?-8:-13,rotation:i%2?1:-1,duration:3+i*.25,repeat:-1,yoyo:true,ease:'sine.inOut',delay:.9+i*.08})});}
+    /* REV247 — switch to animated scene only after full timeline initialization. */
+    document.documentElement.classList.remove('rev247-layer-static');
   }
 
   function initDropOriginalBottle(){

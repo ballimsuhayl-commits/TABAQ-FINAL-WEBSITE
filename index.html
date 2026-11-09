@@ -257,12 +257,14 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}button{color:inhe
 .product-media .kit-open,.product-media .kit-box{backface-visibility:hidden}
 .product-card.is-unboxed .kit-open{opacity:1;transform:translateY(-4px) scale(1.025);animation:tabaqTraySettle .72s cubic-bezier(.16,1,.3,1) both}
 .product-card.is-unboxed .kit-box{opacity:0;transform:translate3d(68%,-34%,0) rotate(11deg) scale(.8);animation:tabaqLidLift .7s cubic-bezier(.16,1,.3,1) both}
+/* REV246-BOX-OPEN — restore complete hover/focus reveal; manual Close suppresses re-open until next entry. */
+.product-media{cursor:pointer}
 @media (hover:hover) and (pointer:fine){
-.product-card:not(.is-unboxed):hover .kit-open{opacity:.58;transform:translateY(9px) scale(.94)}
-.product-card:not(.is-unboxed):hover .kit-box{opacity:.84;transform:translate3d(8%,-5%,0) rotate(2deg) scale(.96)}
+.product-card:not(.is-unboxed):not(.is-manually-closed):hover .kit-open{opacity:1;transform:translateY(-4px) scale(1.025);animation:tabaqTraySettle .72s cubic-bezier(.16,1,.3,1) both}
+.product-card:not(.is-unboxed):not(.is-manually-closed):hover .kit-box{opacity:0;transform:translate3d(68%,-34%,0) rotate(11deg) scale(.8);animation:tabaqLidLift .7s cubic-bezier(.16,1,.3,1) both}
 }
-.product-card:focus-within:not(.is-unboxed) .kit-open{opacity:.45;transform:translateY(12px) scale(.92)}
-.product-card:focus-within:not(.is-unboxed) .kit-box{opacity:.9;transform:translate3d(5%,-3%,0) rotate(1deg) scale(.97)}
+.product-card:not(.is-unboxed):not(.is-manually-closed):has(.unbox-trigger:focus-visible) .kit-open{opacity:1;transform:translateY(-4px) scale(1.025);animation:tabaqTraySettle .72s cubic-bezier(.16,1,.3,1) both}
+.product-card:not(.is-unboxed):not(.is-manually-closed):has(.unbox-trigger:focus-visible) .kit-box{opacity:0;transform:translate3d(68%,-34%,0) rotate(11deg) scale(.8);animation:tabaqLidLift .7s cubic-bezier(.16,1,.3,1) both}
 @keyframes tabaqTraySettle{0%{opacity:.18;transform:translateY(22px) scale(.9)}58%{opacity:1;transform:translateY(-8px) scale(1.035)}100%{opacity:1;transform:translateY(-4px) scale(1.025)}}
 @keyframes tabaqLidLift{0%{opacity:1;transform:translate3d(0,0,0) rotate(0) scale(.98)}55%{opacity:.92;transform:translate3d(22%,-18%,0) rotate(5deg) scale(.94)}100%{opacity:0;transform:translate3d(68%,-34%,0) rotate(11deg) scale(.8)}}
 .product-card:hover .product-media:after,.product-card:focus-within .product-media:after,.product-card.is-unboxed .product-media:after{transform:scaleX(1.2);opacity:.7}
@@ -359,7 +361,7 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}button{color:inhe
 .product-card.is-targeted::after{content:"Selected mood";position:absolute;top:14px;right:14px;z-index:6;background:var(--ink);color:#fff;border-radius:999px;padding:7px 10px;font-size:9px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
 @keyframes targetPulse{0%{box-shadow:0 0 0 0 rgba(17,17,17,.22)}55%{box-shadow:0 0 0 14px rgba(17,17,17,0)}100%{box-shadow:0 20px 44px rgba(17,17,17,.18)}}
 .product-card.is-targeted{animation:targetPulse .8s ease-out}
-@media (prefers-reduced-motion:reduce){.product-card.is-unboxed .kit-open,.product-card.is-unboxed .kit-box{animation:none!important}
+@media (prefers-reduced-motion:reduce){.product-media .kit-open,.product-media .kit-box{transition:none!important;animation:none!important}
  html{scroll-behavior:auto}
  .utility-track,.trail-track,.hero-bottle img,.layer-motion-bottle img,.story-float-bottle,.drop-floater{animation:none!important}
  .hero-bottle,.layer-motion-bottle,.drop-shot,.drop-cover,.drop-floater,.story-float-bottle{transition:none!important}
@@ -938,10 +940,17 @@ function restoreProductHash(){const id=(location.hash||'').slice(1);if(['clean-s
 $('#shippingRegion')?.addEventListener('change',e=>{state.shippingRegion=e.target.value;localStorage.setItem('tabaq_shipping_region',state.shippingRegion);renderShippingState();track('shipping_region_selected',{region:state.shippingRegion});});
 $('#quoteCountry')?.addEventListener('change',updateQuoteCountryMode);
 
+/* REV246-BOX-OPEN — rearm manual Close only after a fresh pointer entry. */
+document.addEventListener('pointerover',e=>{const card=e.target.closest?.('.product-card');if(card&&!card.contains(e.relatedTarget))card.classList.remove('is-manually-closed');});
 document.addEventListener('click',e=>{
   const jump=e.target.closest('[data-product-jump]');if(jump){e.preventDefault();closeMenu();focusProductFromNav(jump.dataset.productJump);return;}
-  const unbox=e.target.closest('[data-unbox]');if(unbox){const card=unbox.closest('.product-card'),open=!card.classList.contains('is-unboxed');card.classList.toggle('is-unboxed',open);unbox.textContent=open?'Close ↙':'Unbox ↗';
-      unbox.setAttribute('aria-pressed',String(open));return;}
+  /* REV246-BOX-OPEN — preserve click/tap toggling, including clicking the product image. */
+  const unbox=e.target.closest('[data-unbox]');if(unbox){const card=unbox.closest('.product-card');if(!card)return;
+    const open=!card.classList.contains('is-unboxed');card.classList.toggle('is-unboxed',open);card.classList.toggle('is-manually-closed',!open);
+    unbox.textContent=open?'Close ↙':'Unbox ↗';
+    unbox.setAttribute('aria-label',(open?'Close':'Unbox')+' '+(card.querySelector('.product-copy h3')?.textContent.trim()||'kit'));
+    unbox.setAttribute('aria-pressed',String(open));return;}
+  const boxStage=e.target.closest('.product-card .product-media');if(boxStage){boxStage.querySelector('[data-unbox]')?.click();return;}
   const add=e.target.closest('[data-add]');if(add){addCart(add.dataset.add);return;}
   const det=e.target.closest('[data-details]');if(det){openModal(det.dataset.details,det);return;}
   const qty=e.target.closest('[data-qty]');if(qty){setQty(qty.dataset.qty,(state.cart[qty.dataset.qty]||0)+Number(qty.dataset.delta));return;}

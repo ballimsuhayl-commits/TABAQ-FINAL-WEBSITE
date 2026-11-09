@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="rev247-layer-static">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -11,11 +11,11 @@
 <meta property="og:title" content="TABAQ — Fragrance, built in layers">
 <meta property="og:description" content="Four wearing steps. One coordinated fragrance mood. Bonus Scent Balm.">
 <meta property="og:url" content="https://houseoftabaq.com/">
-<meta property="og:image" content="https://houseoftabaq.com/assets/final_kit_naming.svg">
+<meta property="og:image" content="https://houseoftabaq.com/assets/final_kit_naming.webp">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="TABAQ — Fragrance, built in layers">
 <meta name="twitter:description" content="Four wearing steps. One coordinated fragrance mood. Bonus Scent Balm.">
-<meta name="twitter:image" content="https://houseoftabaq.com/assets/final_kit_naming.svg">
+<meta name="twitter:image" content="https://houseoftabaq.com/assets/final_kit_naming.webp">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -44,7 +44,7 @@
           "item": {
             "@type": "Product",
             "name": "TABAQ Clean Skin",
-            "image": "https://houseoftabaq.com/assets/tabaq_asset_005.webp?v=245",
+            "image": "https://houseoftabaq.com/assets/tabaq_asset_005.webp",
             "description": "Fresh + clean five-piece fragrance layering kit.",
             "offers": {
               "@type": "Offer",
@@ -60,7 +60,7 @@
           "item": {
             "@type": "Product",
             "name": "TABAQ Soft Bloom",
-            "image": "https://houseoftabaq.com/assets/tabaq_asset_007.webp?v=245",
+            "image": "https://houseoftabaq.com/assets/tabaq_asset_007.webp",
             "description": "Soft + floral five-piece fragrance layering kit.",
             "offers": {
               "@type": "Offer",
@@ -76,7 +76,7 @@
           "item": {
             "@type": "Product",
             "name": "TABAQ Amber Haze",
-            "image": "https://houseoftabaq.com/assets/tabaq_asset_009.webp?v=245",
+            "image": "https://houseoftabaq.com/assets/tabaq_asset_009.webp",
             "description": "Warm + deep five-piece fragrance layering kit.",
             "offers": {
               "@type": "Offer",
@@ -92,7 +92,7 @@
           "item": {
             "@type": "Product",
             "name": "TABAQ Juice Drift",
-            "image": "https://houseoftabaq.com/assets/tabaq_asset_011.webp?v=245",
+            "image": "https://houseoftabaq.com/assets/tabaq_asset_011.webp",
             "description": "Bright + social five-piece fragrance layering kit.",
             "offers": {
               "@type": "Offer",
@@ -254,19 +254,8 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}button{color:inhe
 .product-media .kit-open,.product-media .kit-box{position:absolute;inset:9%;width:82%;height:82%;object-fit:contain;transform-origin:50% 55%;will-change:transform,opacity;pointer-events:none}
 .product-media .kit-open{z-index:1;opacity:.2;transform:translateY(20px) scale(.88);filter:drop-shadow(0 20px 16px rgba(0,0,0,.14));transition:transform .78s cubic-bezier(.16,1,.3,1),opacity .48s ease}
 .product-media .kit-box{z-index:2;opacity:1;transform:translate3d(0,0,0) rotate(0deg) scale(.98);filter:drop-shadow(0 20px 18px rgba(0,0,0,.16));transition:transform .78s cubic-bezier(.16,1,.3,1),opacity .36s ease}
-.product-media .kit-open,.product-media .kit-box{backface-visibility:hidden}
-.product-card.is-unboxed .kit-open{opacity:1;transform:translateY(-4px) scale(1.025);animation:tabaqTraySettle .72s cubic-bezier(.16,1,.3,1) both}
-.product-card.is-unboxed .kit-box{opacity:0;transform:translate3d(68%,-34%,0) rotate(11deg) scale(.8);animation:tabaqLidLift .7s cubic-bezier(.16,1,.3,1) both}
-/* REV246-BOX-OPEN — restore complete hover/focus reveal; manual Close suppresses re-open until next entry. */
-.product-media{cursor:pointer}
-@media (hover:hover) and (pointer:fine){
-.product-card:not(.is-unboxed):not(.is-manually-closed):hover .kit-open{opacity:1;transform:translateY(-4px) scale(1.025);animation:tabaqTraySettle .72s cubic-bezier(.16,1,.3,1) both}
-.product-card:not(.is-unboxed):not(.is-manually-closed):hover .kit-box{opacity:0;transform:translate3d(68%,-34%,0) rotate(11deg) scale(.8);animation:tabaqLidLift .7s cubic-bezier(.16,1,.3,1) both}
-}
-.product-card:not(.is-unboxed):not(.is-manually-closed):has(.unbox-trigger:focus-visible) .kit-open{opacity:1;transform:translateY(-4px) scale(1.025);animation:tabaqTraySettle .72s cubic-bezier(.16,1,.3,1) both}
-.product-card:not(.is-unboxed):not(.is-manually-closed):has(.unbox-trigger:focus-visible) .kit-box{opacity:0;transform:translate3d(68%,-34%,0) rotate(11deg) scale(.8);animation:tabaqLidLift .7s cubic-bezier(.16,1,.3,1) both}
-@keyframes tabaqTraySettle{0%{opacity:.18;transform:translateY(22px) scale(.9)}58%{opacity:1;transform:translateY(-8px) scale(1.035)}100%{opacity:1;transform:translateY(-4px) scale(1.025)}}
-@keyframes tabaqLidLift{0%{opacity:1;transform:translate3d(0,0,0) rotate(0) scale(.98)}55%{opacity:.92;transform:translate3d(22%,-18%,0) rotate(5deg) scale(.94)}100%{opacity:0;transform:translate3d(68%,-34%,0) rotate(11deg) scale(.8)}}
+.product-card:hover .kit-open,.product-card:focus-within .kit-open,.product-card.is-unboxed .kit-open{opacity:1;transform:translateY(-4px) scale(1.025)}
+.product-card:hover .kit-box,.product-card:focus-within .kit-box,.product-card.is-unboxed .kit-box{opacity:0;transform:translate3d(62%,-28%,0) rotate(10deg) scale(.82)}
 .product-card:hover .product-media:after,.product-card:focus-within .product-media:after,.product-card.is-unboxed .product-media:after{transform:scaleX(1.2);opacity:.7}
 .unbox-trigger{position:absolute;right:12px;bottom:12px;z-index:4;border:1px solid var(--ink);background:rgba(255,255,255,.88);backdrop-filter:blur(10px);border-radius:999px;padding:8px 11px;font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:.25s ease}
 .unbox-trigger:hover{background:var(--ink);color:#fff}
@@ -361,7 +350,7 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}button{color:inhe
 .product-card.is-targeted::after{content:"Selected mood";position:absolute;top:14px;right:14px;z-index:6;background:var(--ink);color:#fff;border-radius:999px;padding:7px 10px;font-size:9px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
 @keyframes targetPulse{0%{box-shadow:0 0 0 0 rgba(17,17,17,.22)}55%{box-shadow:0 0 0 14px rgba(17,17,17,0)}100%{box-shadow:0 20px 44px rgba(17,17,17,.18)}}
 .product-card.is-targeted{animation:targetPulse .8s ease-out}
-@media (prefers-reduced-motion:reduce){.product-media .kit-open,.product-media .kit-box{transition:none!important;animation:none!important}
+@media (prefers-reduced-motion:reduce){
  html{scroll-behavior:auto}
  .utility-track,.trail-track,.hero-bottle img,.layer-motion-bottle img,.story-float-bottle,.drop-floater{animation:none!important}
  .hero-bottle,.layer-motion-bottle,.drop-shot,.drop-cover,.drop-floater,.story-float-bottle{transition:none!important}
@@ -390,12 +379,6 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}button{color:inhe
 .original-four-finish{max-width:1500px;margin:0 auto;padding:74px 28px 94px;display:grid;grid-template-columns:.8fr 1.2fr;gap:40px;align-items:center}.original-four-finish h3{font-size:clamp(38px,4.5vw,68px);line-height:.9;letter-spacing:-.055em;margin:0;text-transform:uppercase}.original-four-finish__bottles{min-height:390px;position:relative;background:#111;border:1px solid #2c2c2c;overflow:hidden}.original-four-finish__bottles img{width:auto!important;position:absolute;bottom:6%;max-height:76%;filter:drop-shadow(0 25px 20px rgba(0,0,0,.26));transform-origin:50% 88%}.original-four-finish__bottles img:nth-child(1){left:12%;height:68%}.original-four-finish__bottles img:nth-child(2){left:36%;height:71%}.original-four-finish__bottles img:nth-child(3){left:64%;height:66%}.original-four-finish__bottles img:nth-child(4){left:79%;height:66%}
 @media(max-width:900px){.original-bottle-theatre,.original-bottle-theatre--reverse,.original-four-finish{grid-template-columns:1fr}.original-bottle-theatre--reverse .original-theatre-copy,.original-bottle-theatre--reverse .original-theatre-stage{order:initial}.original-theatre-copy{min-height:auto}.original-theatre-stage{min-height:390px}.original-scene-grid{grid-template-columns:1fr;height:100svh;padding:78px 14px 34px}.original-scene-copy{position:absolute;left:20px;bottom:34px;z-index:6;padding:0;max-width:52vw}.original-scene-copy h3{font-size:clamp(48px,11vw,78px)}.original-scene-step{font-size:42px}.original-scene-side{display:none}.original-artboard{width:min(86vw,590px);height:min(78svh,760px)}.original-four-finish__bottles{min-height:330px}}
 .rev227-gsap-missing .layer-motion-bottle{opacity:1!important;transform:none!important}.rev227-gsap-missing .drop-floater{opacity:1!important;transform:none!important}
-/* REV247 — preserve original sprite presentation when ScrollTrigger/CDN/reduced-motion is unavailable. */
-html.rev247-layer-static .original-artboard .original-model-empty,
-html.rev247-layer-static .original-artboard .original-product-drop{opacity:0!important}
-html.rev247-layer-static .original-artboard .original-model-final{opacity:1!important;transform:none!important;visibility:visible!important}
-html.rev247-layer-static .original-artboard .original-landing-ring{opacity:0!important}
-
 @media(max-width:700px){.original-bottle-theatre{padding:18px 14px 64px}.original-theatre-copy{padding:24px}.original-theatre-stage{min-height:330px}.original-theatre-bottle--mist{left:8%;height:62%}.original-theatre-bottle--edp{left:33%;height:64%}.original-theatre-bottle--oil1{left:64%;height:60%}.original-theatre-bottle--oil2{left:80%;height:60%}.original-layering-intro{padding:64px 14px 36px}.original-scroll-scene{height:220svh;min-height:1300px}.original-four-finish{padding:56px 14px 70px}.hero-bottle--mist{left:5%;width:25%}.hero-bottle--edp{left:30%;width:30%}.hero-bottle--oil1{left:64%;width:11%}.hero-bottle--oil2{left:80%;width:11%}}
 
 
@@ -502,8 +485,7 @@ button,a,input,select,textarea{touch-action:manipulation}
 @media(prefers-reduced-motion:reduce){.mobile-conversion-bar,.kit-finder,.kit-finder-overlay{transition:none}.kit-finder__choices button:hover{transform:none}}
 
 </style>
-<link rel="stylesheet" href="assets/laya-ai.css">
-</head>
+<link rel="stylesheet" href="assets/tabaq-local-guide.css"><script defer src="assets/tabaq-local-guide.js"></script></head>
 <body>
 <a class="skip-link" href="#mainContent">Skip to content</a>
 <div class="utility" aria-label="Store notices">
@@ -606,10 +588,10 @@ button,a,input,select,textarea{touch-action:manipulation}
   <div class="original-theatre-copy"><p class="eyebrow">Layering in motion</p><h2>MOVE THROUGH THE KIT.</h2><p>Each format has a different role. Move through the four pieces to see how the Veil, Eau de Parfum and two Layering Essences build one scent from lift to depth.</p></div>
   <div class="original-theatre-stage rev225-theatre-stage" tabindex="0" aria-label="Interactive TABAQ fragrance layering set">
     <span class="original-scent-halo original-scent-halo--one"></span><span class="original-scent-halo original-scent-halo--two"></span>
-    <img data-original-bottle class="original-theatre-bottle original-theatre-bottle--mist" src="assets/tabaq_asset_004.webp" loading="eager" fetchpriority="low" alt="TABAQ Layering Veil bottle" width="197" height="583" decoding="async">
-    <img data-original-bottle class="original-theatre-bottle original-theatre-bottle--edp" src="assets/tabaq_asset_002.webp" loading="eager" fetchpriority="low" alt="TABAQ Eau de Parfum bottle" width="249" height="466" decoding="async">
-    <img data-original-bottle class="original-theatre-bottle original-theatre-bottle--oil1" src="assets/tabaq_asset_001.webp" loading="eager" fetchpriority="low" alt="TABAQ Layering Essence 01 bottle" width="111" height="445" decoding="async">
-    <img data-original-bottle class="original-theatre-bottle original-theatre-bottle--oil2" src="assets/tabaq_asset_003.webp" loading="eager" fetchpriority="low" alt="TABAQ Layering Essence 02 bottle" width="114" height="446" decoding="async">
+    <img data-original-bottle class="original-theatre-bottle original-theatre-bottle--mist" src="assets/rev225/bottle_mist.webp" loading="eager" fetchpriority="low" alt="TABAQ Layering Veil bottle" width="197" height="583" decoding="async">
+    <img data-original-bottle class="original-theatre-bottle original-theatre-bottle--edp" src="assets/rev225/bottle_edp.webp" loading="eager" fetchpriority="low" alt="TABAQ Eau de Parfum bottle" width="249" height="466" decoding="async">
+    <img data-original-bottle class="original-theatre-bottle original-theatre-bottle--oil1" src="assets/rev225/bottle_oil1.webp" loading="eager" fetchpriority="low" alt="TABAQ Layering Essence 01 bottle" width="111" height="445" decoding="async">
+    <img data-original-bottle class="original-theatre-bottle original-theatre-bottle--oil2" src="assets/rev225/bottle_oil2.webp" loading="eager" fetchpriority="low" alt="TABAQ Layering Essence 02 bottle" width="114" height="446" decoding="async">
     <div class="original-theatre-hint">Hover / move / scroll</div>
   </div>
 </section>
@@ -622,20 +604,21 @@ button,a,input,select,textarea{touch-action:manipulation}
 <section class="section-shell" aria-labelledby="intent-title">
   <div class="section-head"><div><p class="eyebrow">Shop by intention</p><h2 class="section-title" id="intent-title">Choose the feeling.</h2></div><p>Simple categories keep the decision human: daily, soft, warm or bright.</p></div>
   <div class="intent-grid">
-    <a class="intent-card" href="#shop" data-product-jump="clean-skin" style="--bg:#bfe8df"><img src="assets/tabaq_asset_005.webp?v=245" alt="Clean Skin complete fragrance kit" width="1108" height="844" decoding="async" loading="lazy"><span class="intent-card__copy"><h3>Daily clean</h3><p>Fresh, quiet and close to skin. The easiest place to start.</p><span><span>Shop Clean Skin →</span></span></span></a>
-    <a class="intent-card" href="#shop" data-product-jump="soft-bloom" style="--bg:#ffd5e2"><img src="assets/tabaq_asset_007.webp?v=245" alt="Soft Bloom complete fragrance kit" width="697" height="649" decoding="async" loading="lazy"><span class="intent-card__copy"><h3>Soft floral</h3><p>Gentle floral polish without the heavy perfume cloud.</p><span><span>Shop Soft Bloom →</span></span></span></a>
-    <a class="intent-card" href="#shop" data-product-jump="amber-haze" style="--bg:#e8ceb0"><img src="assets/tabaq_asset_009.webp?v=245" alt="Amber Haze complete fragrance kit" width="1032" height="490" decoding="async" loading="lazy"><span class="intent-card__copy"><h3>Warm evening</h3><p>Smoother, deeper and made for more scent presence.</p><span><span>Shop Amber Haze →</span></span></span></a>
-    <a class="intent-card" href="#shop" data-product-jump="juice-drift" style="--bg:#ffd7ad"><img src="assets/tabaq_asset_011.webp?v=245" alt="Juice Drift complete fragrance kit" width="721" height="640" decoding="async" loading="lazy"><span class="intent-card__copy"><h3>Bright social</h3><p>Juicy, fresh and energetic for weekends and warm days.</p><span><span>Shop Juice Drift →</span></span></span></a>
+    <a class="intent-card" href="#shop" data-product-jump="clean-skin" style="--bg:#bfe8df"><img src="assets/tabaq_asset_005.webp" alt="Clean Skin complete fragrance kit" width="1108" height="844" decoding="async" loading="lazy"><span class="intent-card__copy"><h3>Daily clean</h3><p>Fresh, quiet and close to skin. The easiest place to start.</p><span><span>Shop Clean Skin →</span></span></span></a>
+    <a class="intent-card" href="#shop" data-product-jump="soft-bloom" style="--bg:#ffd5e2"><img src="assets/tabaq_asset_007.webp" alt="Soft Bloom complete fragrance kit" width="697" height="649" decoding="async" loading="lazy"><span class="intent-card__copy"><h3>Soft floral</h3><p>Gentle floral polish without the heavy perfume cloud.</p><span><span>Shop Soft Bloom →</span></span></span></a>
+    <a class="intent-card" href="#shop" data-product-jump="amber-haze" style="--bg:#e8ceb0"><img src="assets/tabaq_asset_009.webp" alt="Amber Haze complete fragrance kit" width="1032" height="490" decoding="async" loading="lazy"><span class="intent-card__copy"><h3>Warm evening</h3><p>Smoother, deeper and made for more scent presence.</p><span><span>Shop Amber Haze →</span></span></span></a>
+    <a class="intent-card" href="#shop" data-product-jump="juice-drift" style="--bg:#ffd7ad"><img src="assets/tabaq_asset_011.webp" alt="Juice Drift complete fragrance kit" width="721" height="640" decoding="async" loading="lazy"><span class="intent-card__copy"><h3>Bright social</h3><p>Juicy, fresh and energetic for weekends and warm days.</p><span><span>Shop Juice Drift →</span></span></span></a>
   </div>
 </section>
 
-<section class="feature-band" id="layer-system">  <div class="feature-band__inner">
+<section class="feature-band" id="layer-system">
+  <div class="feature-band__inner">
     <div class="feature-copy"><p class="eyebrow">The TABAQ layer system</p><h2>Four moves. One mood.</h2><p>The order matters because each format has a different job. Layering Veil creates lift. Eau de Parfum sets the identity. Layering Essence 01 softens. Layering Essence 02 deepens. The bonus Scent Balm keeps the finished scent close and portable.</p>
       <ol class="layer-list"><li><b>01</b><strong>Lift — Layering Veil</strong><span>the opening</span></li><li><b>02</b><strong>Define — Eau de Parfum</strong><span>the identity</span></li><li><b>03</b><strong>Soften — Layering Essence 01</strong><span>the skin finish</span></li><li><b>04</b><strong>Deepen — Layering Essence 02</strong><span>the depth</span></li><li><b>+</b><strong>Bonus — Scent Balm</strong><span>the touch-up finish</span></li></ol>
     </div>
     <div class="feature-image">
       <div class="layer-motion-stage layer-final-kit-stage" data-motion-reveal aria-label="Final TABAQ five-piece fragrance kit">
-        <img class="layer-final-kit-image" src="assets/final_kit_naming.svg" alt="TABAQ kit with Layering Veil, Eau de Parfum, two Layering Essences and Scent Balm" loading="lazy" width="1448" height="1086" decoding="async">
+        <img class="layer-final-kit-image" src="assets/final_kit_naming.webp" alt="TABAQ kit with Layering Veil, Eau de Parfum, two Layering Essences and Scent Balm" loading="lazy" width="1448" height="1086" decoding="async">
       </div>
     </div>
   </div>
@@ -652,26 +635,26 @@ button,a,input,select,textarea{touch-action:manipulation}
     <section class="original-scroll-scene" data-original-scene data-fall="88" data-rot="-13" data-x="-5" style="--accent:#d9982d">
       <div class="original-scene-sticky"><div class="original-scene-grid">
         <aside class="original-scene-copy"><span class="original-scene-step">Step 01</span><h3>LAYERING VEIL</h3><p>mist lightly across the collarbone, chest or clothing line</p><div>Lift the opening</div></aside>
-        <figure class="original-artboard"><img class="original-model-empty" src="assets/tabaq_asset_013.webp" alt="" width="1024" height="1536" decoding="async" loading="eager"><img class="original-product-drop" src="assets/tabaq_asset_015.webp" alt="TABAQ Layering Veil falling into hand" width="1024" height="1536" decoding="async" loading="eager"><span class="original-landing-ring"></span><img class="original-model-final" src="assets/tabaq_asset_014.webp" alt="Layering Veil settled in hand" width="1024" height="1536" decoding="async" loading="eager"></figure>
+        <figure class="original-artboard"><img class="original-model-empty" src="assets/tabaq_asset_013.webp" alt="" width="1024" height="1536" decoding="async" loading="lazy"><img class="original-product-drop" src="assets/tabaq_asset_015.webp" alt="TABAQ Layering Veil falling into hand" width="1024" height="1536" decoding="async" loading="lazy"><span class="original-landing-ring"></span><img class="original-model-final" src="assets/tabaq_asset_014.webp" alt="Layering Veil settled in hand" width="1024" height="1536" decoding="async" loading="lazy"></figure>
         <aside class="original-scene-side">LAYERING VEIL / LIFT</aside>
       </div></div>
     </section>
     <section class="original-scroll-scene" data-original-scene data-fall="86" data-rot="11" data-x="4" style="--accent:#ec7b65">
       <div class="original-scene-sticky"><div class="original-scene-grid">
         <aside class="original-scene-copy"><span class="original-scene-step">Step 02</span><h3>EAU DE PARFUM</h3><p>apply at the neck or wrists to define the main scent identity</p><div>Define the signature</div></aside>
-        <figure class="original-artboard"><img class="original-model-empty" src="assets/tabaq_asset_016.webp" alt="" width="1024" height="1536" decoding="async" loading="eager"><img class="original-product-drop" src="assets/tabaq_asset_018.webp" alt="TABAQ Eau de Parfum falling into hand" width="1024" height="1536" decoding="async" loading="eager"><span class="original-landing-ring"></span><img class="original-model-final" src="assets/tabaq_asset_017.webp" alt="Eau de Parfum settled in hand" width="1024" height="1536" decoding="async" loading="eager"></figure>
+        <figure class="original-artboard"><img class="original-model-empty" src="assets/tabaq_asset_016.webp" alt="" width="1024" height="1536" decoding="async" loading="lazy"><img class="original-product-drop" src="assets/tabaq_asset_018.webp" alt="TABAQ Eau de Parfum falling into hand" width="1024" height="1536" decoding="async" loading="lazy"><span class="original-landing-ring"></span><img class="original-model-final" src="assets/tabaq_asset_017.webp" alt="Eau de Parfum settled in hand" width="1024" height="1536" decoding="async" loading="lazy"></figure>
         <aside class="original-scene-side">EAU DE PARFUM / DEFINE</aside>
       </div></div>
     </section>
     <section class="original-scroll-scene" data-original-scene data-fall="72" data-rot="-8" data-x="0" style="--accent:#78a844">
       <div class="original-scene-sticky"><div class="original-scene-grid">
         <aside class="original-scene-copy"><span class="original-scene-step">Step 03</span><h3>LAYERING ESSENCE 01</h3><p>roll onto pulse points to soften the fragrance into the skin</p><div>Soften the finish</div></aside>
-        <figure class="original-artboard"><img class="original-model-empty" src="assets/tabaq_asset_019.webp" alt="" width="1024" height="1536" decoding="async" loading="eager"><img class="original-product-drop" src="assets/tabaq_asset_021.webp" alt="TABAQ Layering Essence 01 falling into hand" width="1024" height="1536" decoding="async" loading="eager"><span class="original-landing-ring"></span><img class="original-model-final" src="assets/tabaq_asset_020.webp" alt="Layering Essence 01 settled in hand" width="1024" height="1536" decoding="async" loading="eager"></figure>
+        <figure class="original-artboard"><img class="original-model-empty" src="assets/tabaq_asset_019.webp" alt="" width="1024" height="1536" decoding="async" loading="lazy"><img class="original-product-drop" src="assets/tabaq_asset_021.webp" alt="TABAQ Layering Essence 01 falling into hand" width="1024" height="1536" decoding="async" loading="lazy"><span class="original-landing-ring"></span><img class="original-model-final" src="assets/tabaq_asset_020.webp" alt="Layering Essence 01 settled in hand" width="1024" height="1536" decoding="async" loading="lazy"></figure>
         <aside class="original-scene-side">LAYERING ESSENCE 01 / SOFTEN</aside>
       </div></div>
     </section>
   </div>
-  <div class="original-four-finish"><div><p class="eyebrow">Complete the ritual</p><h3>STEP 04 DEEPENS THE FINISH. THE BONUS BALM KEEPS IT CLOSE.</h3><p>Layering Essence 02 is the final wearing step for extra depth. Scent Balm is the portable bonus product for pulse points and later-day touch-ups.</p></div><div class="original-four-finish__bottles rev225-finish" data-original-finish><img src="assets/tabaq_asset_004.webp" alt="Layering Veil" width="197" height="583" decoding="async" loading="lazy"><img src="assets/tabaq_asset_002.webp" alt="Eau de Parfum" width="249" height="466" decoding="async" loading="lazy"><img src="assets/tabaq_asset_001.webp" alt="Layering Essence 01" width="111" height="445" decoding="async" loading="lazy"><img src="assets/tabaq_asset_003.webp" alt="Layering Essence 02" width="114" height="446" decoding="async" loading="lazy"></div></div>
+  <div class="original-four-finish"><div><p class="eyebrow">Complete the ritual</p><h3>STEP 04 DEEPENS THE FINISH. THE BONUS BALM KEEPS IT CLOSE.</h3><p>Layering Essence 02 is the final wearing step for extra depth. Scent Balm is the portable bonus product for pulse points and later-day touch-ups.</p></div><div class="original-four-finish__bottles rev225-finish" data-original-finish><img src="assets/rev225/bottle_mist.webp" alt="Layering Veil" width="197" height="583" decoding="async" loading="lazy"><img src="assets/rev225/bottle_edp.webp" alt="Eau de Parfum" width="249" height="466" decoding="async" loading="lazy"><img src="assets/rev225/bottle_oil1.webp" alt="Layering Essence 01" width="111" height="445" decoding="async" loading="lazy"><img src="assets/rev225/bottle_oil2.webp" alt="Layering Essence 02" width="114" height="446" decoding="async" loading="lazy"></div></div>
 </section>
 
 <section class="original-bottle-theatre original-bottle-theatre--reverse" data-original-bottle-theatre aria-label="Original TABAQ bottle motion theatre continuation">
@@ -707,7 +690,7 @@ button,a,input,select,textarea{touch-action:manipulation}
       </div>
     </div>
     <div class="drop-image" data-motion-reveal aria-label="TABAQ next drop reveal">
-      <img class="drop-shot" src="assets/next_drop_box.svg" alt="TABAQ next drop box and open set" width="1448" height="1086" decoding="async" loading="lazy">
+      <img class="drop-shot" src="assets/next_drop_box.webp" alt="TABAQ next drop box and open set" width="1448" height="1086" decoding="async" loading="lazy">
       <div class="drop-cover" aria-hidden="true"></div>
     </div>
   </div>
@@ -789,10 +772,10 @@ button,a,input,select,textarea{touch-action:manipulation}
     <span class="popup-layer-shape three"></span>
     <div class="waitlist-popup__badge">First access to drops</div>
     <div class="waitlist-popup__bottle-group">
-      <div class="waitlist-popup__bottle bottle-mist"><img src="assets/tabaq_asset_004.webp" alt="" width="197" height="583" decoding="async" loading="lazy"></div>
-      <div class="waitlist-popup__bottle bottle-edp"><img src="assets/tabaq_asset_002.webp" alt="" width="249" height="466" decoding="async" loading="lazy"></div>
-      <div class="waitlist-popup__bottle bottle-oil1"><img src="assets/tabaq_asset_001.webp" alt="" width="111" height="445" decoding="async" loading="lazy"></div>
-      <div class="waitlist-popup__bottle bottle-oil2"><img src="assets/tabaq_asset_003.webp" alt="" width="114" height="446" decoding="async" loading="lazy"></div>
+      <div class="waitlist-popup__bottle bottle-mist"><img src="assets/rev225/bottle_mist.webp" alt="" width="197" height="583" decoding="async" loading="lazy"></div>
+      <div class="waitlist-popup__bottle bottle-edp"><img src="assets/rev225/bottle_edp.webp" alt="" width="249" height="466" decoding="async" loading="lazy"></div>
+      <div class="waitlist-popup__bottle bottle-oil1"><img src="assets/rev225/bottle_oil1.webp" alt="" width="111" height="445" decoding="async" loading="lazy"></div>
+      <div class="waitlist-popup__bottle bottle-oil2"><img src="assets/rev225/bottle_oil2.webp" alt="" width="114" height="446" decoding="async" loading="lazy"></div>
     </div>
   </div>
   <div class="waitlist-popup__content">
@@ -868,10 +851,10 @@ const SAVE_DATA = Boolean(navigator.connection&&navigator.connection.saveData);
 if(SAVE_DATA)document.documentElement.classList.add('save-data');
 const KIT_SPEC = 'Layering Veil 50ml · Eau de Parfum 30ml · Layering Essence 01 10ml · Layering Essence 02 10ml · Scent Balm 5ml';
 const fallbackProducts = [
- {id:'clean-skin',name:'Clean Skin',mood:'Fresh + clean',price:KIT_PRICE_ZAR,description:'Fresh, soft and clean with an easy everyday character.',profile:'mineral air / pear skin / quiet musk',best_for:'everyday wear, work, warm days and understated scent',image:'assets/tabaq_asset_005.webp?v=245',boxImage:'assets/tabaq_asset_006.webp?v=245',tone:'#ccefe5',notes:'mineral air / pear skin / quiet musk'},
- {id:'soft-bloom',name:'Soft Bloom',mood:'Soft + floral',price:KIT_PRICE_ZAR,description:'Soft floral, smooth and polished without feeling heavy.',profile:'petal cream / blush fruit / satin powder',best_for:'gifting, daytime, brunch, dates and soft polished wear',image:'assets/tabaq_asset_007.webp?v=245',boxImage:'assets/tabaq_asset_008.webp?v=245',tone:'#ffd7e4',notes:'petal cream / blush fruit / satin powder'},
- {id:'amber-haze',name:'Amber Haze',mood:'Warm + deep',price:KIT_PRICE_ZAR,description:'Warm, smooth and deeper with more presence for later in the day.',profile:'resin / spice dust / warm woods',best_for:'evenings, cooler weather and a richer scent trail',image:'assets/tabaq_asset_009.webp?v=245',boxImage:'assets/tabaq_asset_010.webp?v=245',tone:'#ead2b6',notes:'resin / spice dust / warm woods'},
- {id:'juice-drift',name:'Juice Drift',mood:'Bright + social',price:KIT_PRICE_ZAR,description:'Bright, juicy and energetic with a cleaner social finish.',profile:'citrus peel / guava / clean sweetness',best_for:'weekends, warm days, holidays and social wear',image:'assets/tabaq_asset_011.webp?v=245',boxImage:'assets/tabaq_asset_012.webp?v=245',tone:'#ffddb6',notes:'citrus peel / guava / clean sweetness'}
+ {id:'clean-skin',name:'Clean Skin',mood:'Fresh + clean',price:KIT_PRICE_ZAR,description:'Fresh, soft and clean with an easy everyday character.',profile:'mineral air / pear skin / quiet musk',best_for:'everyday wear, work, warm days and understated scent',image:'assets/tabaq_asset_005.webp',boxImage:'assets/tabaq_asset_006.webp',tone:'#ccefe5',notes:'mineral air / pear skin / quiet musk'},
+ {id:'soft-bloom',name:'Soft Bloom',mood:'Soft + floral',price:KIT_PRICE_ZAR,description:'Soft floral, smooth and polished without feeling heavy.',profile:'petal cream / blush fruit / satin powder',best_for:'gifting, daytime, brunch, dates and soft polished wear',image:'assets/tabaq_asset_007.webp',boxImage:'assets/tabaq_asset_008.webp',tone:'#ffd7e4',notes:'petal cream / blush fruit / satin powder'},
+ {id:'amber-haze',name:'Amber Haze',mood:'Warm + deep',price:KIT_PRICE_ZAR,description:'Warm, smooth and deeper with more presence for later in the day.',profile:'resin / spice dust / warm woods',best_for:'evenings, cooler weather and a richer scent trail',image:'assets/tabaq_asset_009.webp',boxImage:'assets/tabaq_asset_010.webp',tone:'#ead2b6',notes:'resin / spice dust / warm woods'},
+ {id:'juice-drift',name:'Juice Drift',mood:'Bright + social',price:KIT_PRICE_ZAR,description:'Bright, juicy and energetic with a cleaner social finish.',profile:'citrus peel / guava / clean sweetness',best_for:'weekends, warm days, holidays and social wear',image:'assets/tabaq_asset_011.webp',boxImage:'assets/tabaq_asset_012.webp',tone:'#ffddb6',notes:'citrus peel / guava / clean sweetness'}
 ];
 const state={
   products:[...fallbackProducts],
@@ -897,16 +880,7 @@ function updateFixedUsdUI(){const kitText=moneyUsd(KIT_PRICE_USD);$$('[data-usd-
 function productPriceHtml(p){return `<span class="price-stack"><strong>${money(p.price)}</strong><small>${moneyUsdFromZar(p.price)}<span class="fx-mini">international price</span></small></span>`;}
 function renderProducts(){
   const grid=$('#productGrid');
-  grid.innerHTML=state.products.map((p,i)=>`<article class="product-card" id="${p.id}" style="--tone:${p.tone}"><div class="product-media"><span class="product-index">0${i+1}</span><img class="kit-open" src="${p.image}" data-fallback="assets/final_kit_naming.svg" alt="${p.name} complete five-piece fragrance layering kit opened" loading="lazy" decoding="async"><img class="kit-box" src="${p.boxImage||p.image}" data-fallback="assets/next_drop_box.svg" alt="" aria-hidden="true" loading="lazy" decoding="async"><button class="unbox-trigger" type="button" data-unbox="${p.id}" aria-label="Unbox ${p.name}" aria-pressed="false">Unbox ↗</button></div><div class="product-copy"><span class="product-kicker">${p.mood} / five-piece kit</span><h3><a href="${p.id}.html">${p.name}</a></h3><p>${p.description}</p><div class="product-meta"><span>${p.notes}</span>${productPriceHtml(p)}</div><div class="product-actions"><button type="button" data-details="${p.id}">Details</button><button type="button" class="add-btn" data-add="${p.id}">Add to cart</button></div></div></article>`).join('');
-  grid.querySelectorAll('.product-media img[data-fallback]').forEach(img=>{
-    img.addEventListener('error',()=>{
-      const fallback=img.dataset.fallback;
-      if(fallback && !img.src.includes(fallback)){
-        img.src=fallback;
-        img.classList.add('is-fallback');
-      }
-    },{once:true});
-  });
+  grid.innerHTML=state.products.map((p,i)=>`<article class="product-card" id="${p.id}" style="--tone:${p.tone}"><div class="product-media"><span class="product-index">0${i+1}</span><img class="kit-open" src="${p.image}" alt="${p.name} complete five-piece fragrance layering kit opened" loading="lazy" decoding="async"><img class="kit-box" src="${p.boxImage||p.image}" alt="" aria-hidden="true" loading="lazy" decoding="async"><button class="unbox-trigger" type="button" data-unbox="${p.id}" aria-label="Unbox ${p.name}">Unbox ↗</button></div><div class="product-copy"><span class="product-kicker">${p.mood} / five-piece kit</span><h3><a href="${p.id}.html">${p.name}</a></h3><p>${p.description}</p><div class="product-meta"><span>${p.notes}</span>${productPriceHtml(p)}</div><div class="product-actions"><button type="button" data-details="${p.id}">Details</button><button type="button" class="add-btn" data-add="${p.id}">Add to cart</button></div></div></article>`).join('');
 }
 function saveCart(){localStorage.setItem('tabaq_cart_v233',JSON.stringify(state.cart));}
 function addCart(id,qty=1){state.cart[id]=(state.cart[id]||0)+qty;saveCart();renderCart();track('add_to_cart',{product_id:id,quantity:qty,value:KIT_PRICE_ZAR*qty,currency:'ZAR'});openCart();}
@@ -946,17 +920,9 @@ function restoreProductHash(){const id=(location.hash||'').slice(1);if(['clean-s
 $('#shippingRegion')?.addEventListener('change',e=>{state.shippingRegion=e.target.value;localStorage.setItem('tabaq_shipping_region',state.shippingRegion);renderShippingState();track('shipping_region_selected',{region:state.shippingRegion});});
 $('#quoteCountry')?.addEventListener('change',updateQuoteCountryMode);
 
-/* REV246-BOX-OPEN — rearm manual Close only after a fresh pointer entry. */
-document.addEventListener('pointerover',e=>{const card=e.target.closest?.('.product-card');if(card&&!card.contains(e.relatedTarget))card.classList.remove('is-manually-closed');});
 document.addEventListener('click',e=>{
   const jump=e.target.closest('[data-product-jump]');if(jump){e.preventDefault();closeMenu();focusProductFromNav(jump.dataset.productJump);return;}
-  /* REV246-BOX-OPEN — preserve click/tap toggling, including clicking the product image. */
-  const unbox=e.target.closest('[data-unbox]');if(unbox){const card=unbox.closest('.product-card');if(!card)return;
-    const open=!card.classList.contains('is-unboxed');card.classList.toggle('is-unboxed',open);card.classList.toggle('is-manually-closed',!open);
-    unbox.textContent=open?'Close ↙':'Unbox ↗';
-    unbox.setAttribute('aria-label',(open?'Close':'Unbox')+' '+(card.querySelector('.product-copy h3')?.textContent.trim()||'kit'));
-    unbox.setAttribute('aria-pressed',String(open));return;}
-  const boxStage=e.target.closest('.product-card .product-media');if(boxStage){boxStage.querySelector('[data-unbox]')?.click();return;}
+  const unbox=e.target.closest('[data-unbox]');if(unbox){const card=unbox.closest('.product-card'),open=!card.classList.contains('is-unboxed');card.classList.toggle('is-unboxed',open);unbox.textContent=open?'Close ↙':'Unbox ↗';return;}
   const add=e.target.closest('[data-add]');if(add){addCart(add.dataset.add);return;}
   const det=e.target.closest('[data-details]');if(det){openModal(det.dataset.details,det);return;}
   const qty=e.target.closest('[data-qty]');if(qty){setQty(qty.dataset.qty,(state.cart[qty.dataset.qty]||0)+Number(qty.dataset.delta));return;}
@@ -1051,14 +1017,7 @@ document.addEventListener('visibilitychange',()=>{if(window.gsap&&window.gsap.gl
   function qsa(s,c){return Array.prototype.slice.call((c||document).querySelectorAll(s));}
   function reduce(){return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);}
   function onReady(fn){if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fn,{once:true});else fn();}
-  /* REV247 — GSAP alone is insufficient: the layering timelines REQUIRE ScrollTrigger. */
-  function waitForGsap(fn,tries){
-    tries=tries||0;
-    if(reduce()||(navigator.connection&&navigator.connection.saveData))return;
-    if(window.gsap&&window.ScrollTrigger){fn();return;}
-    if(tries<90){setTimeout(function(){waitForGsap(fn,tries+1)},80);return;}
-    document.documentElement.classList.add('rev227-gsap-missing','rev247-layer-static');
-  }
+  function waitForGsap(fn,tries){tries=tries||0;if(window.gsap){fn();return;}if(tries<40){setTimeout(function(){waitForGsap(fn,tries+1)},80);return;}document.documentElement.classList.add('rev227-gsap-missing');}
   setTimeout(function(){if(!window.gsap||!window.ScrollTrigger)document.documentElement.classList.add('rev238-motion-failsafe');},1400);
 
   function initHero(){
@@ -1164,8 +1123,6 @@ document.addEventListener('visibilitychange',()=>{if(window.gsap&&window.gsap.gl
       tl.to(copy,{y:-8,duration:.18,ease:'none'},0).to(product,{opacity:1,duration:.06,ease:'none'},.02).to(product,{y:0,x:0,rotation:0,scale:1,duration:.54,ease:'power2.out'},.06).to(product,{y:8,duration:.08,ease:'sine.inOut'},.56).to(product,{y:0,duration:.09,ease:'back.out(1.25)'},.64).to(ring,{opacity:.46,scale:1.15,duration:.1,ease:'power1.out'},.58).to(ring,{opacity:0,scale:1.35,duration:.14,ease:'power1.in'},.68).to(empty,{opacity:.08,scale:1.012,duration:.16,ease:'none'},.66).to(final,{opacity:1,scale:1.012,duration:.18,ease:'power1.out'},.68).to(product,{opacity:.06,scale:.985,duration:.12,ease:'none'},.72).to(copy,{y:-14,duration:.18,ease:'none'},.76);
     });
     var finish=document.querySelector('[data-original-finish]');if(finish){var bs=qsa('img',finish);gs.set(bs,{opacity:0,y:68,rotation:function(i){return[-8,7,-6,6][i]||0},scale:.92});gs.to(bs,{opacity:1,y:0,rotation:0,scale:1,duration:.95,stagger:.1,ease:'back.out(1.3)',scrollTrigger:{trigger:finish,start:'top 78%',once:true}});bs.forEach(function(b,i){gs.to(b,{y:i%2?-8:-13,rotation:i%2?1:-1,duration:3+i*.25,repeat:-1,yoyo:true,ease:'sine.inOut',delay:.9+i*.08})});}
-    /* REV247 — switch to animated scene only after full timeline initialization. */
-    document.documentElement.classList.remove('rev247-layer-static');
   }
 
   function initDropOriginalBottle(){
@@ -1190,7 +1147,5 @@ document.addEventListener('visibilitychange',()=>{if(window.gsap&&window.gsap.gl
 })();
 </script>
 
-<script>window.addEventListener('DOMContentLoaded',()=>{if(typeof addCart==='function')window.addCart=addCart;if(typeof openWaitlistPopup==='function')window.openWaitlistPopup=openWaitlistPopup;if(typeof track==='function')window.track=track;});</script>
-<script defer src="assets/laya-ai.js"></script>
 </body>
 </html>

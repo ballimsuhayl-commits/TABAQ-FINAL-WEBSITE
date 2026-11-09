@@ -1,15 +1,16 @@
 {
-  "name": "tabaq-final-website",
-  "version": "244.0.0",
+  "name": "tabaq-commerce-site",
+  "version": "236.0.0",
   "private": true,
-  "description": "TABAQ REV244 storefront with Laya scent concierge, omnichannel messaging hooks, commerce, delivery quoting, mobile optimisation and brand motion.",
+  "description": "TABAQ REV239 storefront: red-team visual repairs, smooth-flow navigation, functional kit-finder sharing, fixed R1,750 / USD 107 pricing, mobile optimization, and commercial hardening.",
+  "type": "commonjs",
   "scripts": {
+    "start": "node backend/server.js",
+    "check": "node --check backend/server.js && node --check backend/catalog.js",
     "build": "rm -rf dist && mkdir -p dist && cp *.html robots.txt sitemap.xml dist/ && cp -R assets dist/assets"
   },
   "engines": {
-    "node": "24.x"
+    "node": ">=20"
   },
-  "dependencies": {
-    "ai": "^7.0.0"
-  }
+  "dependencies": {}
 }

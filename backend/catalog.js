@@ -1,5 +1,4 @@
 'use strict';
-// REV250 — PUBLIC CATALOG IMAGES: serve original TABAQ artwork via the permanent production domain, never ephemeral deployment URLs.
 
 const CURRENCY = (process.env.TABAQ_CURRENCY || 'zar').toLowerCase();
 const KIT_PRICE_ZAR = 1750;
@@ -33,19 +32,19 @@ function buildProduct({ id, name, mood, short, image, description, profile, best
 
 const PRODUCTS = Object.freeze({
   'clean-skin': buildProduct({
-    id: 'clean-skin', name: 'Clean Skin', mood: 'Fresh + clean', short: 'Fresh everyday kit', image: 'https://www.houseoftabaq.com/assets/tabaq_asset_005.webp',
+    id: 'clean-skin', name: 'Clean Skin', mood: 'Fresh + clean', short: 'Fresh everyday kit', image: '/assets/tabaq_asset_005.webp',
     description: 'Fresh, soft and clean with an easy everyday character.', profile: 'Mineral air / pear skin / quiet musk', best_for: 'Everyday wear, work, warm days and understated scent.', stock: 36
   }),
   'soft-bloom': buildProduct({
-    id: 'soft-bloom', name: 'Soft Bloom', mood: 'Soft + floral', short: 'Soft floral kit', image: 'https://www.houseoftabaq.com/assets/tabaq_asset_007.webp',
+    id: 'soft-bloom', name: 'Soft Bloom', mood: 'Soft + floral', short: 'Soft floral kit', image: '/assets/tabaq_asset_007.webp',
     description: 'Soft floral, smooth and polished without feeling heavy.', profile: 'Petal cream / blush fruit / satin powder', best_for: 'Gifting, daytime, brunch, dates and soft polished wear.', stock: 28
   }),
   'amber-haze': buildProduct({
-    id: 'amber-haze', name: 'Amber Haze', mood: 'Warm + deep', short: 'Warm evening kit', image: 'https://www.houseoftabaq.com/assets/tabaq_asset_009.webp',
+    id: 'amber-haze', name: 'Amber Haze', mood: 'Warm + deep', short: 'Warm evening kit', image: '/assets/tabaq_asset_009.webp',
     description: 'Warm, smooth and deeper with more presence for later in the day.', profile: 'Resin / spice dust / warm woods', best_for: 'Evenings, cooler weather and a richer scent trail.', stock: 18
   }),
   'juice-drift': buildProduct({
-    id: 'juice-drift', name: 'Juice Drift', mood: 'Bright + social', short: 'Bright social kit', image: 'https://www.houseoftabaq.com/assets/tabaq_asset_011.webp',
+    id: 'juice-drift', name: 'Juice Drift', mood: 'Bright + social', short: 'Bright social kit', image: '/assets/tabaq_asset_011.webp',
     description: 'Bright, juicy and energetic with a cleaner social finish.', profile: 'Citrus peel / guava / clean sweetness', best_for: 'Weekends, warm days, holidays and social wear.', stock: 22
   })
 });

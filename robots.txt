@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /ops.html
 Disallow: /api/
-Sitemap: https://www.houseoftabaq.com/sitemap.xml
+Sitemap: https://houseoftabaq.com/sitemap.xml

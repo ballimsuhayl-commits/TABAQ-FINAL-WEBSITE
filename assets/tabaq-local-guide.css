@@ -40,3 +40,15 @@ body.menu-open .tabaq-guide-shell,body.cart-open .tabaq-guide-shell,body.modal-o
 @media(prefers-reduced-motion:reduce){.layla-character-stage{display:none!important}.layla-character-poster{opacity:1!important}}
 
 .layla-tour-products{display:flex;flex-wrap:wrap;align-items:center;gap:5px;flex-basis:100%;margin:3px 0}.layla-tour-products small{flex-basis:100%;margin:0!important}.layla-tour-products a{display:inline-block;font-size:11px;font-weight:700;color:#111;text-decoration:underline;padding:3px 4px;background:#f5dccf;border-radius:4px}.tabaq-guide-shell.is-open .tabaq-guide-panel:has(.tabaq-guide-enable.is-visible) .tabaq-guide-download{font-size:9px;margin-bottom:3px}
+
+/* REV239.12 — permanent editorial speech-bubble launcher; one character, one chat entry. */
+.tabaq-guide-launcher{display:flex;align-items:flex-end;justify-content:flex-end;gap:0;min-height:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;color:#111;letter-spacing:normal;text-align:left;position:relative;width:248px;max-width:calc(100vw - 24px);height:108px}
+.layla-launcher-art{display:block;flex:0 0 76px;height:108px;position:relative;filter:drop-shadow(0 3px 3px #34201320)}
+.layla-launcher-speech{position:relative;display:flex;flex-direction:column;gap:4px;align-self:center;flex:1;min-width:0;background:#fffdf8;border:1px solid #d5c6b8;border-radius:15px 15px 4px 15px;padding:10px 11px;box-shadow:0 5px 16px #34201314}
+.layla-launcher-speech:after{content:"";position:absolute;right:-6px;bottom:13px;width:10px;height:10px;transform:rotate(45deg);background:#fffdf8;border-right:1px solid #d5c6b8;border-top:1px solid #d5c6b8}
+.layla-launcher-kicker{font-size:8px;font-weight:800;letter-spacing:.09em;line-height:1.1;color:#766257}
+.layla-launcher-copy{font-size:14px;font-weight:600;line-height:1.25}
+.tabaq-guide-launcher:focus-visible{outline:2px solid #111;outline-offset:3px}
+.tabaq-guide-shell.is-open .tabaq-guide-launcher{display:none}
+.tabaq-guide-shell.is-open .tabaq-guide-panel{bottom:0}
+@media(max-width:700px),(pointer:coarse) and (max-height:550px){.tabaq-guide-launcher{width:192px;height:76px}.layla-launcher-art{flex-basis:53px;height:76px}.layla-launcher-speech{padding:7px 8px;gap:3px;border-radius:11px 11px 3px 11px}.layla-launcher-kicker{font-size:7px}.layla-launcher-copy{font-size:12px}.tabaq-guide-shell.is-open .tabaq-guide-panel{bottom:0}}

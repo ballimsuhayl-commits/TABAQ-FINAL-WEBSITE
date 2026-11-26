@@ -109,7 +109,7 @@ const BUY_NOW=/\b(add (?:it|this|that|the kit) to (?:my )?cart|buy (?:it|this|th
 const PRICE_OBJECTION=/\b(expensive|pricey|too much money|too expensive|can t afford|cant afford|cannot afford|over my budget|cheaper|worth it|worth the price|discount|on sale|budget)\b/;
 const TECH=/\b(alcohol|alcoholfree|allergy|allergic|pregnan\w*|eczema|rash|irritation|sensitive skin|safe for|ingredients?|concentration|halal|vegan|cruelty free|certified|ifra|lasts|longevity|how long|projection|sillage)\b/;
 const INFO=/\b(what is|what are|define|meaning|explain|history|invent|chemical|chemistry|distillation|how is|how are|difference between|why does|who was|who invented)\b/;
-const DISCOVERY=/\b(want|looking|love|like|prefer|enjoy|need|recommend|choose|suggest|wear|gift|try|something|which kit|which one|not sure|unsure|undecided|what suits|can t decide|cant decide)\b/;
+const DISCOVERY=/\b(want|wants|looking|love|loves|like|likes|prefer|prefers|enjoy|enjoys|need|needs|recommend|choose|suggest|wear|wears|gift|try|something|which kit|which one|not sure|unsure|undecided|what suits|can t decide|cant decide)\b/;
 function cleanQuery(s){return normalize(s).replace(/\b(alchohol|alchol|alocohol|alcohl)\b/g,"alcohol").replace(/\b(aboy|abot|abou|abt)\b/g,"about");}
 function salesProfile(question,history=[],page=""){
  const q=cleanQuery(question),turns=history.filter(x=>x&&x.role==="user").slice(-7).map(x=>cleanQuery(x.content)).concat(q);
@@ -160,7 +160,7 @@ function salesAnswer(question,history=[],page=""){
  if(/\b(layer|layering|ritual|how to use|how to apply|steps|balm|inside|contents|box|price|cost|rand|usd|delivery|shipping|how much)\b/.test(q)||brandMention(q)&&!p.match)return contextualReply(q,history,page);
  if(p.stage==="educate")return contextualReply(q,history,page);
  if(p.gift&&!p.likes.length&&!p.selected)return ans("A fragrance gift is a lovely idea. Do they usually wear something fresh and understated, soft and floral, or warm and rich?");
- if((DISCOVERY.test(q)||p.dislikes.length&&q.split(" ").length<10)&&p.match){
+ if((DISCOVERY.test(q)||p.likes.some(w=>has(q,w))||p.dislikes.length&&q.split(" ").length<10)&&p.match){
   const k=p.match,pr=PRODUCT[k],repeat=normalize(last).includes(normalize(pr.name)),reason=p.occasion&&OCCASION[p.occasion]?" I think it would suit you "+OCCASION[p.occasion]+".":"";
   return ans(repeat?SCENE[k][1]+" I'd stay with "+pr.name+" for what you've described.":SCENE[k][0]+" I'd suggest "+pr.name+"."+reason,k);
  }

@@ -498,6 +498,8 @@ function serveStatic(req, res, pathname) {
 async function handler(req, res) {
   const url = new URL(req.url, `http://${req.headers.host || `localhost:${PORT}`}`);
   if (url.pathname === '/health') return json(res, 200, { ok: true, revision: 239, stripe_configured: Boolean(STRIPE_SECRET_KEY), admin_configured: Boolean(ADMIN_TOKEN), wise_api_configured: Boolean(WISE_API_TOKEN), commerce_layer: 'fixed-usd-107-plus-wise-shipping-reference' });
+  // REV239.2 Layla: dedicated AI route; all existing commerce routes unchanged.
+  if (url.pathname === '/api/layla') return require('./layla').handle(req, res);
   if (url.pathname.startsWith('/api/')) return handleApi(req, res, url);
   return serveStatic(req, res, url.pathname);
 }

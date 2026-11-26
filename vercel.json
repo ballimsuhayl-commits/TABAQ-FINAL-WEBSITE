@@ -6,6 +6,15 @@
   "trailingSlash": false,
   "headers": [
     {
+      "source": "/assets/tabaq-local-guide.:ext(js|css)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
       "source": "/(.*)",
       "headers": [
         {

@@ -328,10 +328,14 @@ async function handleApi(req, res, url) {
       return json(res, 200, { products: publicCatalog().map((p) => ({ ...p, stock: Number(inventory[p.id] ?? p.stock) })), currency: CURRENCY });
     }
 
+    if (req.method === 'GET' && pathname === '/api/waitlist') return json(res,200,{available:process.env.VERCEL==='1'?require('./drop-access').configured():true});
     if (req.method === 'POST' && pathname === '/api/waitlist') {
       if (rateLimited(req, 'waitlist', 8)) return json(res, 429, { error: 'too_many_requests', message: 'Please wait a moment and try again.' });
       const body = await readJson(req); const email = cleanText(body.email, 240).toLowerCase();
       if (!validEmail(email)) return json(res, 400, { error: 'invalid_email', message: 'Enter a valid email address.' });
+      if (body.consent !== true) return json(res,400,{error:'consent_required',message:'Please agree to receive launch updates.'});
+      if (req.headers.origin && new URL(req.headers.origin).host !== req.headers.host) return json(res,403,{error:'origin_not_allowed',message:'Use the official TABAQ website.'});
+      if(process.env.VERCEL==='1'){const store=require('./drop-access');if(!store.configured())return json(res,503,{error:'drop_access_unavailable',message:'Drop Access is temporarily unavailable. Please try later.'});try{const record=await store.save(email,cleanText(body.source||'website',80),cleanText(body.drop_id||'tabaq-drops',120),'drop-access-v1.1');return json(res,200,{ok:true,waitlist_id:record.id});}catch(_){return json(res,503,{error:'drop_access_unavailable',message:'We could not confirm registration. Please try later.'});}}
       const existing = readList(WAITLIST_FILE).find((item) => String(item.email || '').toLowerCase() === email);
       const record = {
         id: existing?.id || `wait_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`,
@@ -339,6 +343,7 @@ async function handleApi(req, res, url) {
         drop_id: cleanText(body.drop_id || 'tabaq-drops', 120),
         source: cleanText(body.source || 'website', 80),
         consent: true,
+        consent_version:'drop-access-v1.1',
         last_joined_at: new Date().toISOString()
       };
       saveRecord(WAITLIST_FILE, record); notifyOperations(existing ? 'waitlist.refreshed' : 'waitlist.created', record);
@@ -425,7 +430,7 @@ async function handleApi(req, res, url) {
       if (req.method === 'GET' && pathname === '/api/admin/orders') return json(res, 200, { orders: readOrders() });
       if (req.method === 'GET' && pathname === '/api/admin/quotes') return json(res, 200, { quotes: readList(QUOTES_FILE) });
       if (req.method === 'GET' && pathname === '/api/admin/messages') return json(res, 200, { messages: readList(MESSAGES_FILE) });
-      if (req.method === 'GET' && pathname === '/api/admin/waitlist') return json(res, 200, { waitlist: readList(WAITLIST_FILE) });
+      if (req.method === 'GET' && pathname === '/api/admin/waitlist') {if(process.env.VERCEL==='1'){const store=require('./drop-access');if(!store.configured())return json(res,503,{error:'drop_access_unavailable'});try{return json(res,200,{waitlist:await store.listRecords()});}catch(_){return json(res,503,{error:'drop_access_unavailable'});}}return json(res,200,{waitlist:readList(WAITLIST_FILE)});}
       if (req.method === 'GET' && pathname === '/api/admin/inventory') return json(res, 200, { inventory: readInventory() });
 
       const quoteMatch = pathname.match(/^\/api\/admin\/quotes\/([^/]+)\/checkout$/);

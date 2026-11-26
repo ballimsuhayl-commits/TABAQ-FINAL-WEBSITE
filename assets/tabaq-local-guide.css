@@ -21,3 +21,10 @@ body.menu-open .tabaq-guide-shell,body.cart-open .tabaq-guide-shell,body.modal-o
 
 /* REV239.6 — quiet customer-care state and discreet session reset. */
 .tabaq-guide-quick[hidden]{display:none}.layla-clear-chat{background:none;border:0;padding:0;color:inherit;font:inherit;text-decoration:underline;cursor:pointer}.layla-cart-action:disabled{opacity:.55;cursor:wait}
+
+/* REV239.8 — mobile shopping companion, not a full-screen modal. */
+@media (max-width:700px), (pointer:coarse) and (max-height:550px){
+.tabaq-guide-shell.is-open{right:10px;bottom:calc(max(12px,env(safe-area-inset-bottom,0px)) + var(--layla-keyboard,0px))}
+.tabaq-guide-shell.is-open .tabaq-guide-panel{position:absolute;left:auto;right:0;bottom:50px;width:min(360px,calc(100vw - 20px));height:min(44dvh,390px,calc(var(--layla-vh,100dvh) * .64));max-height:calc(var(--layla-vh,100dvh) - 72px);min-height:0;border-radius:15px;grid-template-rows:auto minmax(0,1fr) auto auto auto auto auto;box-shadow:0 12px 35px #0003}
+.tabaq-guide-head{padding:9px 48px 8px 12px;min-height:48px;display:flex;flex-wrap:wrap;align-items:center;column-gap:9px;row-gap:2px}.tabaq-guide-kicker{flex-basis:100%;font-size:8px;letter-spacing:.1em;margin:0}.tabaq-guide-head h2{font-size:24px;line-height:1}.tabaq-guide-status{margin:0;padding:3px 6px;font-size:8px;letter-spacing:0}.tabaq-guide-close{top:8px;right:8px;width:34px;height:34px;line-height:1}.tabaq-guide-messages{padding:8px;min-height:0;overscroll-behavior:contain}.tabaq-guide-msg{max-width:93%;padding:8px 10px;margin-bottom:7px;font-size:13px;line-height:1.38}.tabaq-guide-quick{padding:5px 8px;gap:5px;min-height:0}.tabaq-guide-quick button{padding:6px 9px;font-size:10px;min-height:28px}.tabaq-guide-form{padding:6px;gap:6px}.tabaq-guide-form input{min-height:40px;font-size:16px;padding:0 8px}.tabaq-guide-form button{min-width:50px;padding:0 8px}.tabaq-guide-privacy{padding:0 8px 5px;font-size:9px;line-height:1.2}.tabaq-guide-enable.is-visible{min-height:30px;margin:0 8px 4px;font-size:11px}.tabaq-guide-download.is-visible{margin:0 8px 4px;font-size:10px}
+}

@@ -54,3 +54,17 @@ body.menu-open .tabaq-guide-shell,body.cart-open .tabaq-guide-shell,body.modal-o
 
 /* REV239.13 — persistent Layla portrait + speech, no legacy dark pill. */
 .layla-launcher-speech{margin-right:4px}.layla-launcher-copy{letter-spacing:-.015em}.tabaq-guide-launcher:hover .layla-launcher-speech{border-color:#9e8170}.tabaq-guide-launcher:focus-visible .layla-launcher-speech{border-color:#111}.tabaq-guide-launcher .layla-launcher-art{align-self:flex-end}.tabaq-guide-shell.is-open .tabaq-guide-launcher{display:none!important}
+
+/* REV239.14 — mobile Layla visibility. Preserve desktop, animation assets and chat behavior.
+   Portrait proportions follow the original 380 x 480 animation canvas. */
+@media (max-width:700px) and (orientation:portrait){
+  .tabaq-guide-launcher{width:min(264px,calc(100vw - 20px));height:clamp(122px,35vw,142px)}
+  .tabaq-guide-launcher .layla-launcher-art{flex:0 0 clamp(96px,27vw,112px);height:100%}
+  .tabaq-guide-head{min-height:110px;padding:12px 128px 10px 12px;box-sizing:border-box}
+  .layla-head-art{width:88px;height:110px;right:32px}
+  .tabaq-guide-head:before{width:132px;height:132px;right:7px;top:-8px}
+  .tabaq-guide-shell.is-open .tabaq-guide-panel{height:min(50dvh,435px,calc(var(--layla-vh,100dvh) * .64))}
+  .tabaq-guide-shell.is-open:has(.tabaq-guide-form input:focus) .tabaq-guide-head{min-height:66px;padding:7px 86px 8px 12px}
+  .tabaq-guide-shell.is-open:has(.tabaq-guide-form input:focus) .layla-head-art{width:50px;height:66px;right:34px}
+  .tabaq-guide-shell.is-open:has(.tabaq-guide-form input:focus) .tabaq-guide-head:before{width:93px;height:93px;right:9px;top:-7px}
+}

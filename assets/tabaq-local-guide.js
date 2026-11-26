@@ -319,7 +319,7 @@ function occasionReply(question,history,page,profile){
  const first=choose(e.day),second=choose(e.night);
  if(!first)return answer("I wouldn't push a scent that clashes with your taste. What fragrance character would you enjoy for this occasion?");
  const knownTime=day||night||oldDay||oldNight,own=/\b(my wedding|bride|groom)\b/.test(q);
- const intro=own?"For your own wedding, I'd choose a scent that feels unmistakably you.":e.intro;
+ const intro=own?"For your own wedding, I'd choose a scent that feels unmistakably you.":follow&&night?"For the evening, a little depth would be lovely.":follow&&day?"For daytime, I'd keep it light and elegant.":e.intro;
  if(names.length===1&&eligible(names[0]))return answer(PRODUCT[names[0]].name+" could suit the occasion if you enjoy "+descriptions[names[0]]+".",names[0]);
  if(knownTime||subtle||requested.n>0||first===second){
   const best=choose(requested.n>0?requested.id:subtle?"clean-skin":night||oldNight?e.night:e.day);

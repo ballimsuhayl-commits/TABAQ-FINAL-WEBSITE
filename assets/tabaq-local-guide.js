@@ -384,7 +384,36 @@ function masterAnswer(question,history=[],page="",commerce){
  return result;
 }
 
-const engine={KB,SYSTEM,FACTS,PRODUCT,retrieve,localReply,safeCustomerReply,contextualReply,productContext,salesProfile,salesAnswer,SALES_POLICY,salesChips,MASTER_POLICY,MASTER_LINKS,masterSensitive,cleanHistory,masterContext,masterPreflight,masterAnswer,normalizeCommerce,technicalLevel,LAYLA_VOICE,CULTURAL_POLICY,portraitReply};
+/* REV239.11: semantic animation intent; existing truth and action gates remain authoritative. */
+const MOTION_CUES=Object.freeze({welcome:"welcome",idle:"idle",blink:"blink",greet:"greet_wave",listen:"listening",discover:"curious",think:"thinking",explain:"explaining",technical:"explaining",compare:"explaining",recommend:"recommend",occasion:"recommend",gift:"recommend",vision:"recommend",layer:"explaining",tour:"greet_wave",show_product:"recommend",portrait:"delighted",share:"delighted",drop:"curious",price:"explaining",objection:"reassure",support:"reassure",safety:"idle",privacy:"idle",decline:"farewell",thanks:"delighted",humour:"amused",purchase:"recommend",success:"delighted",farewell:"farewell",error:"reassure"});
+function motionIntent(question,result={},profile={}){
+ const q=cleanQuery(question);
+ if(masterSensitive(question)||/\b(throat swelling|breathing difficulty|allerg\w*|rash|irritation|asthma|pregnan\w*)\b/.test(q))return "safety";
+ if(result.reset||result.link==="privacy")return "privacy";
+ if(["support","returns","terms"].includes(result.link)||/\b(refund|broken|damaged|complaint|payment problem)\b/.test(q))return "support";
+ if(NO_SALE.test(q))return "decline";
+ if(result.tour)return "tour";if(result.portrait)return "portrait";
+ if(result.dropAccess||["access","drop"].includes(result.link))return "drop";
+ if(result.action==="purchase")return "purchase";
+ if(profile.stage==="objection"||PRICE_OBJECTION.test(q))return "objection";
+ if(/\b(price|cost|how much|delivery|shipping)\b/.test(q)&&!TECH.test(q))return "price";
+ if(/\b(layer|layering|ritual|how to apply)\b/.test(q))return "layer";
+ if(/\b(share|send to a friend)\b/.test(q))return "share";
+ if(/\b(compare|versus|vs|difference)\b/.test(q))return "compare";
+ if(result.stage==="occasion"||/\b(wedding|occasion|interview|date night|party)\b/.test(q))return "occasion";
+ if(/\b(gift|present)\b/.test(q))return "gift";
+ if(/\b(imagine|feel to wear|describe the scent)\b/.test(q))return "vision";
+ if(result.kit||result.alternatives?.length)return "recommend";
+ if(/^(thanks|thank you|lovely|love it|perfect|great|amazing|wonderful)$/.test(q))return "thanks";
+ if(/^(bye|goodbye|see you|good night)$/.test(q))return "farewell";
+ if(/^(hi|hey|hello|good morning|good afternoon)$/.test(q))return "greet";
+ if(/\b(joke|funny|haha)\b/.test(q))return "humour";
+ if(TECH.test(q)||profile.stage==="technical")return "technical";
+ if(INFO.test(q)||profile.stage==="educate")return "explain";
+ return String(result.reply||"").includes("?")?"discover":"explain";
+}
+
+const engine={KB,SYSTEM,FACTS,PRODUCT,retrieve,localReply,safeCustomerReply,contextualReply,productContext,salesProfile,salesAnswer,SALES_POLICY,salesChips,MASTER_POLICY,MASTER_LINKS,masterSensitive,cleanHistory,masterContext,masterPreflight,masterAnswer,normalizeCommerce,technicalLevel,LAYLA_VOICE,CULTURAL_POLICY,portraitReply,MOTION_CUES,motionIntent};
 if(typeof module==="object"&&module.exports){module.exports=engine;return;}
 if(root.__TABAQ_LOCAL_GUIDE__)return;root.__TABAQ_LOCAL_GUIDE__=true;
 let shell,panel,messages,input,status,launcher,enableBtn,downloadNote,send,notice,session=null,preparing=false,busy=false,history=[],cloud=true,autoShown=false;
@@ -393,12 +422,69 @@ const WELCOME="Hey, my name is Layla. How can I help you?";
 const SESSION_KEY="tabaq_layla_session_v2";
 const currentProduct=productContext(location.pathname);
 let transcript=[],restoring=false,quickPanel,quietChips=false,dropReady=false,dropInvited=false;
+/* REV239.11 — one character renderer shared by welcome and chat masthead.
+   Original Lottie artwork; reduced motion and hidden tabs stop playback. */
+let avatar,avatarStage,avatarPoster,avatarAnim=null,avatarPending=null,avatarReady=false,avatarCue="idle",avatarActive=false,avatarVisible=true,typingTimer=0,headSlot,welcomeSlot,tourIndex=-1;
+const reducedMotion=matchMedia("(prefers-reduced-motion: reduce)");
+const CLIPS={welcome:[0,84],idle:[84,264],blink:[264,309],greet_wave:[309,399],listening:[399,539],curious:[539,639],thinking:[639,799],explaining:[799,924],recommend:[924,1029],amused:[1029,1109],delighted:[1109,1194],reassure:[1194,1309],farewell:[1309,1419]};
+const CUE_LABEL={welcome:"Welcome",idle:"Here to help",blink:"Here to help",greet:"Hello",listen:"Listening",discover:"Discovering your taste",think:"Considering your question",explain:"Fragrance notes",technical:"Fragrance science",compare:"Comparing scents",recommend:"A suggestion for you",occasion:"For your occasion",gift:"Finding a gift",vision:"Imagine the scent",layer:"The art of layering",tour:"Your private tour",show_product:"Explore the collection",portrait:"Your scent portrait",share:"Made to share",drop:"Drop access",price:"The details",objection:"Let’s make it clear",support:"Here to help",safety:"Your wellbeing first",privacy:"Your privacy",decline:"Enjoy exploring",thanks:"You’re welcome",humour:"A little playfulness",purchase:"Your chosen kit",success:"Lovely!",farewell:"See you again",error:"Let’s try again"};
+function makeAvatar(){
+ avatar=create("div","layla-character");avatar.setAttribute("aria-hidden","true");
+ avatarPoster=create("img","layla-character-poster");avatarPoster.src="/assets/layla-editorial-poster.webp";avatarPoster.alt="";avatarPoster.decoding="async";
+ avatarStage=create("div","layla-character-stage");avatar.append(avatarPoster,avatarStage);
+ if("IntersectionObserver" in window)new IntersectionObserver(es=>{avatarVisible=es[0].isIntersecting;if(!avatarVisible)avatarAnim?.pause();else if(avatarActive)playCue(avatarCue);}).observe(avatar);
+}
+function loadMotion(){
+ if(avatarPending||reducedMotion.matches||!avatarActive)return;
+ avatarPending=new Promise((resolve,reject)=>{if(window.lottie)return resolve();const sc=create("script");sc.src="/assets/layla-lottie-runtime.js";sc.async=true;sc.onload=resolve;sc.onerror=reject;document.head.append(sc);})
+ .then(()=>fetch("/assets/layla-editorial-motion.json",{cache:"force-cache"})).then(r=>{if(!r.ok)throw Error("motion asset");return r.json();}).then(data=>{
+ if(!window.lottie)throw Error("player unavailable");
+ avatarAnim=window.lottie.loadAnimation({container:avatarStage,renderer:"canvas",loop:false,autoplay:false,animationData:data,rendererSettings:{preserveAspectRatio:"xMidYMax meet",clearCanvas:true}});
+ avatarAnim.addEventListener("DOMLoaded",()=>{avatarReady=true;playCue(avatarCue);});
+ avatarAnim.addEventListener("data_failed",()=>{avatarReady=false;avatar.classList.remove("is-animated");});
+ avatarAnim.addEventListener("complete",()=>{if(!avatarActive||document.hidden||reducedMotion.matches||!avatarVisible)return;if(avatarCue==="think"||avatarCue==="listen")playCue(avatarCue);else if(avatarCue!=="idle")playCue("idle");else{avatarAnim.pause();avatar.classList.remove("is-animated");}});
+ }).catch(()=>{avatar.classList.remove("is-animated");});
+}
+function playCue(cue){
+ avatarCue=MOTION_CUES[cue]?cue:"idle";if(!avatar)return;
+ avatar.dataset.cue=avatarCue;shell.dataset.laylaMotion=avatarCue;
+ if(status&&avatarActive)status.textContent=CUE_LABEL[avatarCue]||"Here to help";
+ if(!avatarActive||document.hidden||reducedMotion.matches||["safety","privacy"].includes(avatarCue)){avatarAnim?.pause();avatar.classList.remove("is-animated");return;}
+ loadMotion();if(!avatarReady||!avatarVisible)return;
+ const clip=CLIPS[MOTION_CUES[avatarCue]]||CLIPS.idle;
+ avatarAnim.pause();avatarAnim.resetSegments(true);avatarAnim.loop=false;avatarAnim.resize();avatarAnim.playSegments(clip,true);avatar.classList.add("is-animated");
+}
+function avatarPlace(slot,cue){if(!avatar||!slot)return;slot.append(avatar);avatarActive=true;playCue(cue);}
+function avatarStop(){avatarActive=false;avatarAnim?.pause();avatar?.classList.remove("is-animated");}
+function syncMotion(){if(!avatarActive)return;if(document.hidden||reducedMotion.matches){avatarAnim?.pause();avatar.classList.remove("is-animated");}else playCue(avatarCue);}
+const TOUR=[
+ {id:"layer-system",label:"The art of layering",text:"TABAQ is about wearing a scent in layers, rather than choosing one fixed perfume. Here’s the idea behind the system."},
+ {id:"shop",label:"Find your mood",text:"Meet the four published moods: Clean Skin, Soft Bloom, Amber Haze and Juice Drift. Choose by how you want your fragrance to feel."},
+ {id:"layer-guide",label:"See the ritual",text:"This guide shows how the fragrance system is put together. Follow the actual product labels for application instructions."},
+ {id:"scent-portrait",label:"Make it yours",text:"Your scent portrait is an exploration of what you love smelling. It’s free, and not a formula."},
+ {id:"drops",label:"Stay in the loop",text:"Explore TABAQ’s release information. You can choose to follow the brand or join Drop Access when registration is available."}];
+function tourRequest(q){return /\b(take me (?:on a tour|around)|give me a tour|show me around|tour (?:the site|the website|tabaq)|site tour|website tour|guided tour)\b/.test(cleanQuery(q));}
+function showTourStep(index){
+ if(index<0||index>=TOUR.length)return;tourIndex=index;const step=TOUR[index];
+ if(!["/","/index.html"].includes(location.pathname)){saveVisit();location.assign("/#"+step.id);return;}
+ const target=document.getElementById(step.id);if(target){target.scrollIntoView({behavior:reducedMotion.matches?"instant":"smooth",block:"start"});try{window.history.replaceState(window.history.state,"",location.pathname+location.search+"#"+step.id);}catch(_){}}
+ const n=bubble(step.text,"bot");history=cleanHistory([...history,{role:"assistant",content:step.text}]);tourControls(n);playCue("tour");saveVisit();
+}
+function tourControls(box){
+ messages.querySelectorAll(".layla-tour-controls").forEach(x=>x.remove());const c=create("div","layla-tour-controls");
+ c.append(create("small","layla-tour-index",tourIndex<0?"THE TABAQ EDIT / 5 STOPS":String(tourIndex+1).padStart(2,"0")+" / 05 · "+TOUR[tourIndex].label));
+ function action(label,fn){const b=create("button","layla-action",label);b.type="button";b.onclick=fn;c.append(b);}
+ if(tourIndex<0)action("Start the tour →",()=>showTourStep(0));
+ else{if(tourIndex>0)action("← Back",()=>showTourStep(tourIndex-1));if(tourIndex<TOUR.length-1)action("Next stop →",()=>showTourStep(tourIndex+1));else action("Create my scent portrait",()=>{tourIndex=-1;c.remove();saveVisit();ask("Create my scent portrait");});}
+ action("End tour",()=>{tourIndex=-1;c.remove();saveVisit();playCue("idle");});box.append(c);messages.scrollTop=messages.scrollHeight;
+}
+
 function readVisit(){try{const x=JSON.parse(sessionStorage.getItem(SESSION_KEY)||"null");return x&&Date.now()-x.updated<7200000?x:null;}catch(_){return null;}}
-function saveVisit(){if(restoring||!shell)return;try{sessionStorage.setItem(SESSION_KEY,JSON.stringify({updated:Date.now(),open:shell.classList.contains("is-open"),history:cleanHistory(history),transcript:transcript.filter(x=>!masterSensitive(x.text)).slice(-24),page:location.pathname,quiet:quietChips,dropInvited}));}catch(_){}}
+function saveVisit(){if(restoring||!shell)return;try{sessionStorage.setItem(SESSION_KEY,JSON.stringify({updated:Date.now(),open:shell.classList.contains("is-open"),history:cleanHistory(history),transcript:transcript.filter(x=>!masterSensitive(x.text)).slice(-24),page:location.pathname,quiet:quietChips,dropInvited,tourIndex}));}catch(_){}}
 const create=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!=null)n.textContent=txt;return n;};
 function state(t,mode){status.textContent=t;status.className="tabaq-guide-status"+(mode?" "+mode:"");}
 function bubble(t,role="bot",record=true){const n=create("div","tabaq-guide-msg "+role,t);messages.append(n);if(record&&!restoring&&!masterSensitive(t)){const item={role,text:String(t).slice(0,1500)};transcript.push(item);n._laylaRecord=item;saveVisit();}messages.scrollTop=messages.scrollHeight;return n;}
-function renderSalesChips(){if(!quickPanel)return;quickPanel.hidden=quietChips;if(quietChips){quickPanel.replaceChildren();return;}const last=history.filter(x=>x.role==="user").at(-1)?.content||"";const p=salesProfile(last,history.slice(0,-1),currentProduct);quickPanel.replaceChildren();for(const [label,question]of [["My scent portrait","Create my scent portrait"],...salesChips(p,currentProduct),["Next drop","Join Drop Access"]]){const b=create("button","",label);b.type="button";b.onclick=()=>ask(question);quickPanel.append(b);}}
+function renderSalesChips(){if(!quickPanel)return;quickPanel.hidden=quietChips;if(quietChips){quickPanel.replaceChildren();return;}const last=history.filter(x=>x.role==="user").at(-1)?.content||"";const p=salesProfile(last,history.slice(0,-1),currentProduct);quickPanel.replaceChildren();for(const [label,question]of [["Take a tour","Take me on a tour"],["My scent portrait","Create my scent portrait"],...salesChips(p,currentProduct),["Next drop","Join Drop Access"]]){const b=create("button","",label);b.type="button";b.onclick=()=>ask(question);quickPanel.append(b);}}
 function officialLink(box,id){const item=MASTER_LINKS[id];if(!item)return;const a=create("a","layla-kit-link",item.label+" →");a.href=item.href;a.addEventListener("click",saveVisit);box.append(a);}
 
 /* Explicit opt-in, isolated from chat and AI. */
@@ -431,32 +517,33 @@ function kitLink(box,id){if(!PRODUCT[id])return;const action=box._laylaRecord?.a
  if(box._laylaRecord){box._laylaRecord.kit=id;saveVisit();}}
 function compactMobile(){return matchMedia("(max-width: 700px), (pointer: coarse) and (max-height: 550px)").matches;}
 function syncLaylaViewport(){const v=window.visualViewport;if(!v||!shell)return;const inset=Math.max(0,window.innerHeight-v.height-v.offsetTop);shell.style.setProperty("--layla-vh",v.height+"px");shell.style.setProperty("--layla-keyboard",inset+"px");}
-function open(focus=true){syncLaylaViewport();shell.classList.add("is-open");launcher.setAttribute("aria-expanded","true");notice.hidden=true;autoShown=true;try{sessionStorage.setItem("layla_welcomed","1");}catch(_){}if(focus&&!compactMobile())input.focus({preventScroll:true});if(!cloud)prepareLocal(false);saveVisit();}
-function close(){shell.classList.remove("is-open");launcher.setAttribute("aria-expanded","false");saveVisit();}
+function open(focus=true){syncLaylaViewport();avatarPlace(headSlot,"greet");shell.classList.add("is-open");launcher.setAttribute("aria-expanded","true");notice.hidden=true;autoShown=true;try{sessionStorage.setItem("layla_welcomed","1");}catch(_){}if(focus&&!compactMobile())input.focus({preventScroll:true});if(!cloud)prepareLocal(false);saveVisit();}
+function close(){avatarStop();shell.classList.remove("is-open");launcher.setAttribute("aria-expanded","false");saveVisit();}
 async function prepareLocal(activated){if(session||preparing||!root.LanguageModel)return;preparing=true;try{const opt={expectedInputs:[{type:"text",languages:["en"]}],expectedOutputs:[{type:"text",languages:["en"]}]};const avail=await root.LanguageModel.availability(opt);if(avail==="unavailable")return;if(avail!=="available"&&!activated){enableBtn.classList.add("is-visible");downloadNote.classList.add("is-visible");return;}if(!cloud)state("Starting on-device AI","is-download");session=await root.LanguageModel.create({...opt,initialPrompts:[{role:"system",content:SYSTEM+"\n"+SALES_POLICY+"\n"+MASTER_POLICY+"\n"+LAYLA_VOICE+"\n"+CULTURAL_POLICY+"\nNo current price, stock, verified claims, or application specifications are available to the on-device model. For those, use the official website and deterministic answers."}],monitor(m){m.addEventListener("downloadprogress",e=>{downloadNote.textContent="Downloading browser AI · "+Math.round((Number(e.loaded)||0)*100)+"%";});}});enableBtn.classList.remove("is-visible");downloadNote.classList.remove("is-visible");if(!cloud)state("On-device AI","is-ai");}catch(_){session=null;}finally{preparing=false;}}
 async function ask(question){
  if(busy)return;question=question.trim().slice(0,1000);if(!question)return;
- busy=true;send.disabled=true;input.disabled=true;const past=cleanHistory(history),sensitive=masterSensitive(question);bubble(question,"user",!sensitive);if(!sensitive)history.push({role:"user",content:question});
+ busy=true;clearTimeout(typingTimer);playCue("think");send.disabled=true;input.disabled=true;const past=cleanHistory(history),sensitive=masterSensitive(question);bubble(question,"user",!sensitive);if(!sensitive)history.push({role:"user",content:question});
  saveVisit();const pending=bubble("Let me think…","bot",false);let result=null,mode="library";
  try{
- if(sensitive){result=masterAnswer(question,past,currentProduct);mode="library";}else{
+ if(sensitive){result=masterAnswer(question,past,currentProduct);mode="library";}else if(tourRequest(question)&&!NO_SALE.test(cleanQuery(question))){result={reply:"I’d love to show you around. Five little stops, at your pace — shall we start with the layering system?",tour:true,locked:true};}else{
  const r=await fetch("/api/layla",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:question,history:past,page:currentProduct}),signal:AbortSignal.timeout(9500)});
  if(r.ok){const j=await r.json();if(typeof j.reply==="string"&&j.reply.trim()){result=j;mode=j.mode||"library";if(mode==="cloud")cloud=true;}}}
  }catch(_){}
  if((!result||mode==="library")&&session&&!sensitive&&!result?.locked&&!masterPreflight(question,past,currentProduct)&&!["browse","purchase","objection"].includes(salesProfile(question,past,currentProduct).stage)){try{const notes=retrieve(question,6).filter(x=>x[0]!=="TABAQ").map(x=>x[2]).join("\n");const reply=await session.prompt("Relevant knowledge: "+notes+"\nRecent conversation: "+JSON.stringify(past)+"\nCustomer question: "+question+"\nCurrent product: "+(PRODUCT[currentProduct]?.name||"None")+"\nStated shopping context: "+JSON.stringify(salesProfile(question,past,currentProduct)),{signal:AbortSignal.timeout(2500)});if(reply&&reply.trim()){result={reply};mode="device";}}catch(_){session=null;}}
  if(!result)result=masterAnswer(question,past,currentProduct);
- pending.textContent=result.exact===true?String(result.reply).slice(0,1000):safeCustomerReply(result.reply,question,masterAnswer(question,past,currentProduct).reply);quietChips=!!(sensitive||result.reset||["support","returns","privacy","terms"].includes(result.link)||NO_SALE.test(cleanQuery(question)));if(result.reset){history=[];transcript=[];dropInvited=false;try{session?.destroy?.();}catch(_){}session=null;messages.replaceChildren(pending);try{sessionStorage.removeItem(SESSION_KEY);}catch(_){}}if(!sensitive&&!result.reset){history.push({role:"assistant",content:pending.textContent});history=cleanHistory(history);const item={role:"bot",text:pending.textContent,...(result.action==="purchase"?{action:"purchase"}:{}),...(MASTER_LINKS[result.link]?{link:result.link}:{}),...(result.portrait?{portrait:result.portrait}:{}),...(result.dropAccess?{dropAccess:true}:{}),...(Array.isArray(result.alternatives)?{alternatives:result.alternatives.filter(id=>PRODUCT[id]).slice(0,2)}:{})};transcript.push(item);pending._laylaRecord=item;}
+ pending.textContent=result.exact===true?String(result.reply).slice(0,1000):safeCustomerReply(result.reply,question,masterAnswer(question,past,currentProduct).reply);quietChips=!!(sensitive||result.reset||["support","returns","privacy","terms"].includes(result.link)||NO_SALE.test(cleanQuery(question)));if(result.reset){history=[];transcript=[];dropInvited=false;tourIndex=-1;try{session?.destroy?.();}catch(_){}session=null;messages.replaceChildren(pending);try{sessionStorage.removeItem(SESSION_KEY);}catch(_){}}if(!sensitive&&!result.reset){history.push({role:"assistant",content:pending.textContent});history=cleanHistory(history);const item={role:"bot",text:pending.textContent,...(result.action==="purchase"?{action:"purchase"}:{}),...(MASTER_LINKS[result.link]?{link:result.link}:{}),...(result.portrait?{portrait:result.portrait}:{}),...(result.dropAccess?{dropAccess:true}:{}),...(Array.isArray(result.alternatives)?{alternatives:result.alternatives.filter(id=>PRODUCT[id]).slice(0,2)}:{})};transcript.push(item);pending._laylaRecord=item;}
+ if(result.tour){tourIndex=-1;tourControls(pending);}else if(quietChips||/\b(end tour|stop tour|stop the tour)\b/.test(cleanQuery(question))){tourIndex=-1;messages.querySelectorAll(".layla-tour-controls").forEach(n=>n.remove());}
  if(result.kit)kitLink(pending,result.kit);
  if(Array.isArray(result.alternatives))for(const id of result.alternatives.slice(0,2))if(PRODUCT[id]&&id!==result.kit)kitLink(pending,id);
  if(result.dropAccess){dropInvited=true;dropForm(pending);}else if(MASTER_LINKS[result.link])officialLink(pending,result.link);
  if(result.portrait){portraitCard(pending,result.portrait);if(!quietChips&&!dropInvited)dropInvitation(pending);}else if(!quietChips&&!dropInvited&&!result.action&&!result.link&&!result.alternatives&&result.kit&&/\b(love it|love this|sounds lovely|sounds good|interested|really like|not ready|maybe later|tell me more)\b/.test(cleanQuery(question)))dropInvitation(pending);
- state("Here to help",mode==="library"?"":"is-ai");renderSalesChips();
+ state("Here to help",mode==="library"?"":"is-ai");playCue(motionIntent(question,result,salesProfile(question,past,currentProduct)));renderSalesChips();
  saveVisit();busy=false;send.disabled=false;input.disabled=false;messages.scrollTop=messages.scrollHeight;if(shell.classList.contains("is-open")&&!compactMobile())input.focus({preventScroll:true});
 }
 function build(){
  shell=create("div","tabaq-guide-shell");launcher=create("button","tabaq-guide-launcher");launcher.type="button";launcher.setAttribute("aria-expanded","false");launcher.innerHTML='<i aria-hidden="true"></i><span>ASK LAYLA</span>';
  panel=create("section","tabaq-guide-panel");panel.setAttribute("aria-label","Layla, TABAQ AI fragrance concierge");
- const head=create("header","tabaq-guide-head");head.append(create("p","tabaq-guide-kicker","Your fragrance concierge · AI"),create("h2","","Layla"));status=create("div","tabaq-guide-status","Here to help");head.append(status);const exit=create("button","tabaq-guide-close","×");exit.type="button";exit.setAttribute("aria-label","Close Layla");head.append(exit);
+ const head=create("header","tabaq-guide-head");head.append(create("p","tabaq-guide-kicker","Your fragrance concierge · AI"),create("h2","","Layla"));status=create("div","tabaq-guide-status","Here to help");head.append(status);headSlot=create("div","layla-head-art");head.append(headSlot);const exit=create("button","tabaq-guide-close","×");exit.type="button";exit.setAttribute("aria-label","Close Layla");head.append(exit);
  messages=create("div","tabaq-guide-messages");messages.setAttribute("role","log");messages.setAttribute("aria-live","polite");
  const quick=create("div","tabaq-guide-quick");quickPanel=quick;
  enableBtn=create("button","tabaq-guide-enable","Enable on-device AI");enableBtn.type="button";enableBtn.onclick=()=>prepareLocal(true);
@@ -464,15 +551,15 @@ function build(){
  const form=create("form","tabaq-guide-form");input=create("input");input.type="text";input.placeholder="Ask me anything about fragrance…";input.maxLength=1000;input.setAttribute("aria-label","Message Layla");send=create("button","","Send");send.type="submit";form.append(input,send);
  const privacy=create("p","tabaq-guide-privacy","Messages may use AI providers. Don’t share private or payment details. ");const link=create("a","","Privacy");link.href="/privacy.html";privacy.append(link);const clear=create("button","layla-clear-chat","Clear chat");clear.type="button";clear.addEventListener("click",()=>{if(!busy)ask("Clear my chat");});privacy.append(" · ",clear);
  panel.append(head,messages,quick,enableBtn,downloadNote,form,privacy);
- notice=create("div","layla-welcome");notice.hidden=true;notice.setAttribute("aria-label","Layla welcome");const invite=create("button","layla-invite",WELCOME);invite.type="button";invite.onclick=()=>open();const dismiss=create("button","layla-dismiss","×");dismiss.type="button";dismiss.setAttribute("aria-label","Dismiss Layla welcome");dismiss.onclick=()=>{notice.hidden=true;};notice.append(invite,dismiss);
+ notice=create("div","layla-welcome");notice.hidden=true;notice.setAttribute("aria-label","Layla welcome");const invite=create("button","layla-invite",WELCOME);invite.type="button";invite.onclick=()=>open();const dismiss=create("button","layla-dismiss","×");dismiss.type="button";dismiss.setAttribute("aria-label","Dismiss Layla welcome");dismiss.onclick=()=>{notice.hidden=true;avatarStop();};welcomeSlot=create("div","layla-welcome-art");notice.append(welcomeSlot,invite,dismiss);makeAvatar();invite.prepend(create("span","layla-welcome-kicker","THE TABAQ EDIT / AI CONCIERGE"));
  shell.append(panel,notice,launcher);document.body.append(shell);syncLaylaViewport();window.visualViewport?.addEventListener("resize",syncLaylaViewport,{passive:true});window.visualViewport?.addEventListener("scroll",syncLaylaViewport,{passive:true});window.addEventListener("resize",syncLaylaViewport,{passive:true});
- const visit=readVisit();if(visit){restoring=true;quietChips=visit.quiet===true;dropInvited=visit.dropInvited===true;history=cleanHistory(visit.history);transcript=Array.isArray(visit.transcript)?visit.transcript.filter(x=>x&&["user","bot"].includes(x.role)&&typeof x.text==="string"&&!masterSensitive(x.text)).slice(-24):[];for(const item of transcript){const n=bubble(item.text,item.role,false);n._laylaRecord=item;if(item.kit&&!item.alternatives?.includes(item.kit))kitLink(n,item.kit);if(Array.isArray(item.alternatives))for(const id of item.alternatives.slice(0,2))if(PRODUCT[id])kitLink(n,id);if(item.portrait)portraitCard(n,item.portrait);if(MASTER_LINKS[item.link])officialLink(n,item.link);}restoring=false;if(!transcript.length)bubble(WELCOME);if(visit.open){open(false);if(currentProduct&&productContext(visit.page)!==currentProduct&&!quietChips&&!NO_SALE.test(history.filter(x=>x.role==="user").at(-1)?.content||"")){const intro=bubble(VISION[currentProduct]+" Ask me anything about this kit.");history.push({role:"assistant",content:intro.textContent});history=history.slice(-16);saveVisit();}}else saveVisit();}else{bubble(WELCOME);saveVisit();}
- renderSalesChips();window.addEventListener("pagehide",saveVisit);
+ const visit=readVisit();if(visit){restoring=true;tourIndex=Number.isInteger(visit.tourIndex)&&visit.tourIndex>=0&&visit.tourIndex<TOUR.length?visit.tourIndex:-1;quietChips=visit.quiet===true;dropInvited=visit.dropInvited===true;history=cleanHistory(visit.history);transcript=Array.isArray(visit.transcript)?visit.transcript.filter(x=>x&&["user","bot"].includes(x.role)&&typeof x.text==="string"&&!masterSensitive(x.text)).slice(-24):[];for(const item of transcript){const n=bubble(item.text,item.role,false);n._laylaRecord=item;if(item.kit&&!item.alternatives?.includes(item.kit))kitLink(n,item.kit);if(Array.isArray(item.alternatives))for(const id of item.alternatives.slice(0,2))if(PRODUCT[id])kitLink(n,id);if(item.portrait)portraitCard(n,item.portrait);if(MASTER_LINKS[item.link])officialLink(n,item.link);}restoring=false;if(!transcript.length)bubble(WELCOME);if(visit.open){open(false);if(tourIndex>=0){const step=TOUR[tourIndex];if(location.hash==="#"+step.id&&productContext(visit.page)!==currentProduct){const n=bubble(step.text);tourControls(n);}else{const n=messages.querySelector(".bot:last-child");if(n)tourControls(n);}}if(currentProduct&&productContext(visit.page)!==currentProduct&&!quietChips&&!NO_SALE.test(history.filter(x=>x.role==="user").at(-1)?.content||"")){const intro=bubble(VISION[currentProduct]+" Ask me anything about this kit.");history.push({role:"assistant",content:intro.textContent});history=history.slice(-16);saveVisit();}}else saveVisit();}else{bubble(WELCOME);saveVisit();}
+ renderSalesChips();window.addEventListener("pagehide",saveVisit);document.addEventListener("visibilitychange",syncMotion);reducedMotion.addEventListener("change",syncMotion);input.addEventListener("input",()=>{if(busy)return;playCue("listen");clearTimeout(typingTimer);typingTimer=setTimeout(()=>{if(!busy)playCue("idle");},1800);});
  launcher.onclick=()=>shell.classList.contains("is-open")?close():open();exit.onclick=()=>{close();launcher.focus();};form.onsubmit=e=>{e.preventDefault();if(busy)return;const q=input.value;input.value="";ask(q);};
  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&shell.classList.contains("is-open"))close();});
  // REV239.10 — first arrival on any public page, no timer before greeting and no automatic keyboard.
- if(!visit){let seen=false;try{seen=sessionStorage.getItem("layla_welcomed")==="1";}catch(_){}if(!seen&&!shell.classList.contains("is-open")&&!autoShown&&!document.body.matches(".waitlist-open,.cart-open,.menu-open,.modal-open,.quote-open,.finder-open")){notice.hidden=false;autoShown=true;try{sessionStorage.setItem("layla_welcomed","1");}catch(_){}setTimeout(()=>{notice.hidden=true;},12000);}}
- window.addEventListener("scroll",()=>{if(window.scrollY>window.innerHeight*.8)notice.hidden=true;},{passive:true});
+ if(!visit){let seen=false;try{seen=sessionStorage.getItem("layla_welcomed")==="1";}catch(_){}if(!seen&&!shell.classList.contains("is-open")&&!autoShown&&!document.body.matches(".waitlist-open,.cart-open,.menu-open,.modal-open,.quote-open,.finder-open")){notice.hidden=false;avatarPlace(welcomeSlot,"welcome");autoShown=true;try{sessionStorage.setItem("layla_welcomed","1");}catch(_){}setTimeout(()=>{notice.hidden=true;if(!shell.classList.contains("is-open"))avatarStop();},12000);}}
+ window.addEventListener("scroll",()=>{if(window.scrollY>window.innerHeight*.8&&!notice.hidden){notice.hidden=true;if(!shell.classList.contains("is-open"))avatarStop();}},{passive:true});
  fetch("/api/waitlist",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{dropReady=j?.available===true;}).catch(()=>{});
  document.addEventListener("click",e=>{if(e.target.closest("[data-layla-portrait]")){e.preventDefault();open(false);ask("Create my scent portrait");}});
  fetch("/api/layla",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.cloudConfigured)state("Here to help");else cloud=false;}).catch(()=>{cloud=false;});

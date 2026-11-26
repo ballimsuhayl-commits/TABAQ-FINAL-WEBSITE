@@ -7,12 +7,13 @@
   "scripts": {
     "start": "node backend/server.js",
     "check": "node --check backend/server.js && node --check backend/catalog.js",
-    "build": "rm -rf dist && mkdir -p dist && cp *.html robots.txt sitemap.xml dist/ && cp -R assets dist/assets"
+    "build": "rm -rf dist && mkdir -p dist && cp *.html robots.txt sitemap.xml dist/ && cp -R assets dist/assets && cp node_modules/lottie-web/build/player/lottie_light_canvas.min.js dist/assets/layla-lottie-runtime.js"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
-    "@vercel/blob": "2.9.0"
+    "@vercel/blob": "2.9.0",
+    "lottie-web": "5.13.0"
   }
 }

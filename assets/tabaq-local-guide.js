@@ -39,7 +39,7 @@ const create=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.classN
 function state(t,mode){status.textContent=t;status.className="tabaq-guide-status"+(mode?" "+mode:"");}
 function bubble(t,role="bot"){const n=create("div","tabaq-guide-msg "+role,t);messages.append(n);messages.scrollTop=messages.scrollHeight;return n;}
 function kitLink(box,id){if(!PRODUCT[id])return;const a=create("a","layla-kit-link","Explore "+PRODUCT[id].name+" →");a.href=id+".html";box.append(a);}
-function open(focus=true){shell.classList.add("is-open");launcher.setAttribute("aria-expanded","true");notice.hidden=true;if(focus)input.focus({preventScroll:true});prepareLocal(false);}
+function open(focus=true){shell.classList.add("is-open");launcher.setAttribute("aria-expanded","true");notice.hidden=true;autoShown=true;try{sessionStorage.setItem("layla_welcomed","1");}catch(_){}if(focus)input.focus({preventScroll:true});if(!cloud)prepareLocal(false);}
 function close(){shell.classList.remove("is-open");launcher.setAttribute("aria-expanded","false");}
 async function prepareLocal(activated){if(session||preparing||!root.LanguageModel)return;preparing=true;try{const opt={expectedInputs:[{type:"text",languages:["en"]}],expectedOutputs:[{type:"text",languages:["en"]}]};const avail=await root.LanguageModel.availability(opt);if(avail==="unavailable")return;if(avail!=="available"&&!activated){enableBtn.classList.add("is-visible");downloadNote.classList.add("is-visible");return;}if(!cloud)state("Starting on-device AI","is-download");session=await root.LanguageModel.create({...opt,initialPrompts:[{role:"system",content:SYSTEM+"\n"+FACTS}],monitor(m){m.addEventListener("downloadprogress",e=>{downloadNote.textContent="Downloading browser AI · "+Math.round((Number(e.loaded)||0)*100)+"%";});}});enableBtn.classList.remove("is-visible");downloadNote.classList.remove("is-visible");if(!cloud)state("On-device AI","is-ai");}catch(_){session=null;}finally{preparing=false;}}
 async function ask(question){
@@ -47,16 +47,16 @@ async function ask(question){
  busy=true;send.disabled=true;input.disabled=true;const past=history.slice(-8);bubble(question,"user");history.push({role:"user",content:question});
  const pending=bubble("One moment…");let result=null,mode="library";
  try{
- const r=await fetch("/api/layla",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:question,history:past}),signal:AbortSignal.timeout(26000)});
+ const r=await fetch("/api/layla",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:question,history:past}),signal:AbortSignal.timeout(9500)});
  if(r.ok){const j=await r.json();if(typeof j.reply==="string"&&j.reply.trim()){result=j;mode=j.mode||"library";cloud=mode==="cloud";}}
  }catch(_){}
- if((!result||mode==="library")&&session){try{const notes=retrieve(question,6).map(x=>x[2]).join("\n");const reply=await session.prompt("Relevant knowledge: "+notes+"\nRecent conversation: "+JSON.stringify(past)+"\nCustomer question: "+question);if(reply&&reply.trim()){result={reply};mode="device";}}catch(_){session=null;}}
+ if((!result||mode==="library")&&session){try{const notes=retrieve(question,6).map(x=>x[2]).join("\n");const reply=await session.prompt("Relevant knowledge: "+notes+"\nRecent conversation: "+JSON.stringify(past)+"\nCustomer question: "+question,{signal:AbortSignal.timeout(2500)});if(reply&&reply.trim()){result={reply};mode="device";}}catch(_){session=null;}}
  if(!result)result=localReply(question,past);
  pending.textContent=String(result.reply||localReply(question,past).reply).trim().slice(0,5000);history.push({role:"assistant",content:pending.textContent});history=history.slice(-16);
  if(result.kit)kitLink(pending,result.kit);
  else if(mode==="cloud"){const names=Object.keys(PRODUCT).filter(k=>pending.textContent.toLowerCase().includes(PRODUCT[k].name.toLowerCase()));if(names.length===1&&/\b(recommend|choose|want|wear|prefer|looking|suggest|kit|buy|gift)\b/i.test(question))kitLink(pending,names[0]);}
  state(mode==="cloud"?"AI fragrance concierge":mode==="device"?"On-device AI":"Fragrance library",mode==="library"?"":"is-ai");
- busy=false;send.disabled=false;input.disabled=false;messages.scrollTop=messages.scrollHeight;input.focus({preventScroll:true});
+ busy=false;send.disabled=false;input.disabled=false;messages.scrollTop=messages.scrollHeight;if(shell.classList.contains("is-open"))input.focus({preventScroll:true});
 }
 function build(){
  shell=create("div","tabaq-guide-shell");launcher=create("button","tabaq-guide-launcher");launcher.type="button";launcher.setAttribute("aria-expanded","false");launcher.innerHTML='<i aria-hidden="true"></i><span>ASK LAYLA</span>';
@@ -73,7 +73,8 @@ function build(){
  shell.append(panel,notice,launcher);document.body.append(shell);
  launcher.onclick=()=>shell.classList.contains("is-open")?close():open();exit.onclick=()=>{close();launcher.focus();};form.onsubmit=e=>{e.preventDefault();if(busy)return;const q=input.value;input.value="";ask(q);};
  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&shell.classList.contains("is-open"))close();});
- if(location.pathname==="/"||/\/index\.html$/.test(location.pathname)){let seen=false;try{seen=sessionStorage.getItem("layla_welcomed")==="1";}catch(_){}if(!seen)setTimeout(()=>{if(!shell.classList.contains("is-open")&&!document.body.matches(".waitlist-open,.cart-open,.menu-open,.modal-open,.quote-open,.finder-open")&&window.scrollY<window.innerHeight*.8){notice.hidden=false;autoShown=true;try{sessionStorage.setItem("layla_welcomed","1");}catch(_){}setTimeout(()=>{notice.hidden=true;},18000);}},4200);}
+ if(location.pathname==="/"||/\/index\.html$/.test(location.pathname)){let seen=false;try{seen=sessionStorage.getItem("layla_welcomed")==="1";}catch(_){}if(!seen)setTimeout(()=>{if(!shell.classList.contains("is-open")&&!autoShown&&!document.body.matches(".waitlist-open,.cart-open,.menu-open,.modal-open,.quote-open,.finder-open")&&window.scrollY<window.innerHeight*.8){notice.hidden=false;autoShown=true;try{sessionStorage.setItem("layla_welcomed","1");}catch(_){}setTimeout(()=>{notice.hidden=true;},10000);}},4200);}
+ window.addEventListener("scroll",()=>{if(window.scrollY>window.innerHeight*.8)notice.hidden=true;},{passive:true});
  fetch("/api/layla",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.cloudConfigured)state("Fragrance concierge");else cloud=false;}).catch(()=>{cloud=false;});
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",build,{once:true});else build();

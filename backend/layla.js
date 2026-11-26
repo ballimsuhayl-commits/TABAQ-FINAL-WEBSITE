@@ -10,7 +10,7 @@ function validZero(x){return x!==null&&x!==undefined&&x!==''&&Number(x)===0;}
 async function zeroModels(token){
  if(pricing.expires>Date.now())return pricing.ids;
  if(pricingPromise)return pricingPromise;
- pricingPromise=(async()=>{try{const r=await fetch(BASE+'/models',{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(4500)});if(!r.ok)return[];const j=await r.json();const ids=MODELS.filter(id=>{const m=j.data?.find(x=>x.id===id);const p=m?.pricing;return p&&validZero(p.prompt??p.input)&&validZero(p.completion??p.output);});pricing={ids,expires:Date.now()+300000};return ids;}catch(_){return[];}finally{pricingPromise=null;}})();return pricingPromise;
+ pricingPromise=(async()=>{try{const r=await fetch(BASE+'/models',{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(1500)});if(!r.ok)return[];const j=await r.json();const ids=MODELS.filter(id=>{const m=j.data?.find(x=>x.id===id);const p=m?.pricing;return p&&validZero(p.prompt??p.input)&&validZero(p.completion??p.output);});pricing={ids,expires:Date.now()+300000};return ids;}catch(_){return[];}finally{pricingPromise=null;}})();return pricingPromise;
 }
 async function read(req){if(req.body&&typeof req.body==='object'&&!Buffer.isBuffer(req.body))return req.body;let s=typeof req.body==='string'?req.body:'';if(!s){for await(const b of req){s+=b;if(Buffer.byteLength(s)>16000)throw Error('too large');}}if(Buffer.byteLength(s)>16000)throw Error('too large');return JSON.parse(s);}
 function permitted(req){const now=Date.now();for(const [k,v]of buckets){if(v.until<now)buckets.delete(k);}if(buckets.size>10000)return false;const ip=String(req.headers['x-vercel-forwarded-for']||req.socket?.remoteAddress||'unknown').split(',')[0].trim();let b=buckets.get(ip);if(!b){b={count:0,until:now+WINDOW};buckets.set(ip,b);}return ++b.count<=LIMIT;}
@@ -27,7 +27,7 @@ async function handle(req,res){
  const models=await zeroModels(token);if(!models.length)return response(res,200,{...fallback,mode:'library'});
  const refs=retrieve(question+' '+history.filter(x=>x.role==='user').slice(-2).map(x=>x.content).join(' '),8).map(x=>x[2]).join('\n');
  const messages=[{role:'system',content:SYSTEM+'\nVERIFIED TABAQ FACTS:\n'+FACTS+'\nREFERENCE EXCERPTS:\n'+refs},...history,{role:'user',content:question}];
- for(const model of models){try{const r=await fetch(BASE+'/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model,messages,max_tokens:650,temperature:0.65}),signal:AbortSignal.timeout(10000)});if(!r.ok)continue;const data=await r.json();const reply=data.choices?.[0]?.message?.content;if(typeof reply==='string'&&reply.trim())return response(res,200,{reply:reply.trim().slice(0,5000),mode:'cloud',model});}catch(_){}}
+ const deadline=Date.now()+7300;for(const model of models){const remaining=deadline-Date.now();if(remaining<700)break;try{const r=await fetch(BASE+'/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model,messages,max_tokens:1000,temperature:0.65}),signal:AbortSignal.timeout(Math.min(remaining,models.length>1&&model===models[0]?4400:remaining))});if(!r.ok)continue;const data=await r.json();const reply=data.choices?.[0]?.message?.content;if(typeof reply==='string'&&reply.trim())return response(res,200,{reply:reply.trim().slice(0,5000),mode:'cloud',model});}catch(_){}}
  return response(res,200,{...fallback,mode:'library'});
 }
 module.exports={handle};

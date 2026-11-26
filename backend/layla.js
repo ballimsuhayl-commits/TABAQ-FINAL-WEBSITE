@@ -26,8 +26,25 @@ function recommendationLinks(reply,question,profile,commerce,fallback){
  const ids=Object.keys(PRODUCT).filter(id=>commerce.products.some(p=>p.id===id&&p.active)&&reply.toLowerCase().includes(PRODUCT[id].name.toLowerCase())).slice(0,2);
  return ids.length===1?{kit:ids[0]}:ids.length===2?{alternatives:ids}:{};
 }
+/* The occasion planner establishes the factual recommendation before the model writes its natural phrasing. */
+function occasionPlan(fallback){
+ if(fallback.stage!=="occasion")return null;
+ const names=Object.keys(PRODUCT).filter(id=>fallback.reply.toLowerCase().includes(PRODUCT[id].name.toLowerCase()));
+ return {names,answer:fallback.reply,needsQuestion:fallback.reply.includes("?")};
+}
+function groundReply(reply,question,fallback,plan){
+ let text=safeCustomerReply(reply,question,"").replace(/\*\*([^*]+)\*\*/g,"$1");
+ if(!text)return "";
+ if(plan){const names=Object.keys(PRODUCT).filter(id=>text.toLowerCase().includes(PRODUCT[id].name.toLowerCase()));
+ if(plan.names.some(id=>!names.includes(id))||names.some(id=>!plan.names.includes(id))||(plan.needsQuestion&&!text.includes("?")))return fallback.reply;
+ // Do not allow generated product-specific notes beyond the published descriptors in an occasion response.
+ const suspect=/\b(citrus.green|airy woods|vanilla|oud|jasmine|sandalwood|lavender|bergamot|ambergris|patchouli|leather|vetiver|long.last(?:ing|s)|lasts all day|guarantee|guaranteed)\b/i;
+ if(suspect.test(text))return fallback.reply;
+ }
+ return text;
+}
 async function handle(req,res){
- const token=auth(req);if(req.method==='GET')return response(res,200,{ok:true,concierge:'Layla',revision:'239.8',groqConfigured:!!process.env.GROQ_API_KEY,cloudConfigured:!!token||!!process.env.GROQ_API_KEY,freeModels:MODELS,knowledgeEntries:KB.length,masterReferenceSections:REF_CHUNKS.length,commerceMode:commerceRecord().state,paidFallback:false,gatewayStatus});
+ const token=auth(req);if(req.method==='GET')return response(res,200,{ok:true,concierge:'Layla',revision:'239.8.1',groqConfigured:!!process.env.GROQ_API_KEY,cloudConfigured:!!token||!!process.env.GROQ_API_KEY,freeModels:MODELS,knowledgeEntries:KB.length,masterReferenceSections:REF_CHUNKS.length,commerceMode:commerceRecord().state,paidFallback:false,gatewayStatus});
  if(req.method!=='POST')return response(res,405,{error:'method_not_allowed'});
  const origin=req.headers.origin;let host='';try{host=new URL(origin||'https://'+req.headers.host).hostname;}catch(_){}if(origin&&host!==String(req.headers.host||'').split(':')[0])return response(res,403,{error:'origin_not_allowed'});
  if(!permitted(req))return response(res,429,{error:'Please try again in a minute.'});
@@ -37,13 +54,14 @@ async function handle(req,res){
  const page=productContext(j.page);const commerce=commerceRecord();const profile=masterContext(question,history,page,commerce);const pre=masterPreflight(question,history,page,commerce);const fallback=masterAnswer(question,history,page,commerce);
  // Deterministic truth, safety, action and privacy gates run before any AI provider.
  if(pre||masterSensitive(question)||["browse","purchase","objection"].includes(profile.stage))return response(res,200,{...(pre||fallback),locked:true,mode:"library"});
+ const plan=occasionPlan(fallback);
  const refs=retrieve(question+" "+history.filter(x=>x.role==="user").slice(-2).map(x=>x.content).join(" "),8).filter(x=>x[0]!=="TABAQ").map(x=>x[2]).join("\n");
- const messages=[{role:"system",content:SYSTEM+"\n"+SALES_POLICY+"\n"+MASTER_POLICY+"\n"+LAYLA_VOICE+"\nPRODUCT SCENT PROFILES (descriptive notes, not ingredients): "+JSON.stringify(PRODUCT)+"\nCURRENT SHOPPING CONTEXT (stated preferences only): "+JSON.stringify({...profile,commerce:undefined})+"\nPUBLIC CATALOGUE (no unverified stock or release claims): "+JSON.stringify(commerce)+"\nCURRENT PRODUCT: "+(PRODUCT[page]?.name||"None")+"\nREFERENCE EXCERPTS:\n"+refs+"\nGENERAL MASTER REFERENCE:\n"+referenceFor(question)},...history,{role:"user",content:question}];
+ const messages=[{role:"system",content:SYSTEM+"\n"+SALES_POLICY+"\n"+MASTER_POLICY+"\n"+LAYLA_VOICE+"\nPRODUCT SCENT PROFILES (descriptive notes, not ingredients): "+JSON.stringify(PRODUCT)+"\nCURRENT SHOPPING CONTEXT (stated preferences only): "+JSON.stringify({...profile,commerce:undefined,...(plan?{selected:null,match:null,stage:"occasion"}:{})})+"\nPUBLIC CATALOGUE (no unverified stock or release claims): "+JSON.stringify(commerce)+"\nCURRENT PRODUCT: "+(plan?"Ignored for new occasion recommendation":PRODUCT[page]?.name||"None")+"\nOCCASION PLAN: "+(plan?JSON.stringify(plan)+" — preserve these recommendation choices and the useful question; phrase naturally. Do not substitute the viewed kit.": "No occasion override")+"\nREFERENCE EXCERPTS:\n"+refs+"\nGENERAL MASTER REFERENCE:\n"+referenceFor(question)},...history,{role:"user",content:question}];
  // Explicit owner-supplied Groq credentials only; no automatic purchase or paid-plan activation.
- if(process.env.GROQ_API_KEY){try{const r=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{Authorization:"Bearer "+process.env.GROQ_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({model:"openai/gpt-oss-120b",messages,max_completion_tokens:900,reasoning_effort:"low",temperature:0.65}),signal:AbortSignal.timeout(6500)});if(r.ok){const data=await r.json();const reply=safeCustomerReply(data.choices?.[0]?.message?.content,question,"");if(reply)return response(res,200,{reply,mode:"cloud",model:"openai/gpt-oss-120b",provider:"groq",...recommendationLinks(reply,question,profile,commerce,fallback)});}return response(res,200,{...fallback,mode:"library",gatewayStatus:"groq-http-"+r.status});}catch(_){return response(res,200,{...fallback,mode:"library",gatewayStatus:"groq-unavailable"});}}
+ if(process.env.GROQ_API_KEY){try{const r=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{Authorization:"Bearer "+process.env.GROQ_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({model:"openai/gpt-oss-120b",messages,max_completion_tokens:900,reasoning_effort:"low",temperature:0.65}),signal:AbortSignal.timeout(6500)});if(r.ok){const data=await r.json();const reply=groundReply(data.choices?.[0]?.message?.content,question,fallback,plan);if(reply)return response(res,200,{reply,mode:plan&&reply===fallback.reply?"library":"cloud",model:"openai/gpt-oss-120b",provider:"groq",...recommendationLinks(reply,question,profile,commerce,fallback)});}return response(res,200,{...fallback,mode:"library",gatewayStatus:"groq-http-"+r.status});}catch(_){return response(res,200,{...fallback,mode:"library",gatewayStatus:"groq-unavailable"});}}
  if(!token)return response(res,200,{...fallback,mode:'library',gatewayStatus:'no-credential'});
  const models=await zeroModels(token);if(!models.length)return response(res,200,{...fallback,mode:'library',gatewayStatus});
- const deadline=Date.now()+7300;for(const model of models){const remaining=deadline-Date.now();if(remaining<700)break;try{const r=await fetch(BASE+'/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model,messages,max_tokens:1000,temperature:0.65}),signal:AbortSignal.timeout(Math.min(remaining,models.length>1&&model===models[0]?4400:remaining))});if(!r.ok){gatewayStatus='model-http-'+r.status;continue;}const data=await r.json();const reply=data.choices?.[0]?.message?.content;if(typeof reply==='string'&&reply.trim()){const polished=safeCustomerReply(reply,question,'');if(polished){gatewayStatus='connected';return response(res,200,{reply:polished,mode:'cloud',model,...recommendationLinks(polished,question,profile,commerce,fallback)});}}gatewayStatus='empty-response';}catch(_){gatewayStatus='model-timeout';}}
+ const deadline=Date.now()+7300;for(const model of models){const remaining=deadline-Date.now();if(remaining<700)break;try{const r=await fetch(BASE+'/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model,messages,max_tokens:1000,temperature:0.65}),signal:AbortSignal.timeout(Math.min(remaining,models.length>1&&model===models[0]?4400:remaining))});if(!r.ok){gatewayStatus='model-http-'+r.status;continue;}const data=await r.json();const reply=data.choices?.[0]?.message?.content;if(typeof reply==='string'&&reply.trim()){const polished=groundReply(reply,question,fallback,plan);if(polished){gatewayStatus='connected';return response(res,200,{reply:polished,mode:'cloud',model,...recommendationLinks(polished,question,profile,commerce,fallback)});}}gatewayStatus='empty-response';}catch(_){gatewayStatus='model-timeout';}}
  return response(res,200,{...fallback,mode:'library',gatewayStatus});
 }
 module.exports={handle};

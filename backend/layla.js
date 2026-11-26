@@ -1,6 +1,6 @@
 /* REV239.2 Layla — free-model-only Vercel AI Gateway, with shared local library. */
 'use strict';
-const {SYSTEM,FACTS,KB,retrieve,localReply,safeCustomerReply,contextualReply,productContext,PRODUCT}=require('../assets/tabaq-local-guide.js');
+const {SYSTEM,FACTS,KB,retrieve,localReply,safeCustomerReply,contextualReply,productContext,PRODUCT,salesProfile,salesAnswer,SALES_POLICY}=require('../assets/tabaq-local-guide.js');
 const MODELS=['nvidia/nemotron-3.5-lightning-free','reflection/beam-free'];
 const BASE='https://ai-gateway.vercel.sh/v1';
 const LIMIT=20,WINDOW=60000;const buckets=new Map();let pricing={expires:0,ids:[]},pricingPromise=null;let gatewayStatus='not-tested';
@@ -15,16 +15,18 @@ async function zeroModels(token){
 async function read(req){if(req.body&&typeof req.body==='object'&&!Buffer.isBuffer(req.body))return req.body;let s=typeof req.body==='string'?req.body:'';if(!s){for await(const b of req){s+=b;if(Buffer.byteLength(s)>16000)throw Error('too large');}}if(Buffer.byteLength(s)>16000)throw Error('too large');return JSON.parse(s);}
 function permitted(req){const now=Date.now();for(const [k,v]of buckets){if(v.until<now)buckets.delete(k);}if(buckets.size>10000)return false;const ip=String(req.headers['x-vercel-forwarded-for']||req.socket?.remoteAddress||'unknown').split(',')[0].trim();let b=buckets.get(ip);if(!b){b={count:0,until:now+WINDOW};buckets.set(ip,b);}return ++b.count<=LIMIT;}
 async function handle(req,res){
- const token=auth(req);if(req.method==='GET')return response(res,200,{ok:true,concierge:'Layla',revision:'239.4',groqConfigured:!!process.env.GROQ_API_KEY,cloudConfigured:!!token||!!process.env.GROQ_API_KEY,freeModels:MODELS,knowledgeEntries:KB.length,paidFallback:false,gatewayStatus});
+ const token=auth(req);if(req.method==='GET')return response(res,200,{ok:true,concierge:'Layla',revision:'239.5',groqConfigured:!!process.env.GROQ_API_KEY,cloudConfigured:!!token||!!process.env.GROQ_API_KEY,freeModels:MODELS,knowledgeEntries:KB.length,paidFallback:false,gatewayStatus});
  if(req.method!=='POST')return response(res,405,{error:'method_not_allowed'});
  const origin=req.headers.origin;let host='';try{host=new URL(origin||'https://'+req.headers.host).hostname;}catch(_){}if(origin&&host!==String(req.headers.host||'').split(':')[0])return response(res,403,{error:'origin_not_allowed'});
  if(!permitted(req))return response(res,429,{error:'Please try again in a minute.'});
  let j;try{j=await read(req);}catch(_){return response(res,400,{error:'Invalid request'});}
  if(!j||typeof j.message!=='string'||!j.message.trim()||j.message.length>1000)return response(res,400,{error:'Message must be 1–1000 characters.'});
  const question=j.message.trim();const history=(Array.isArray(j.history)?j.history:[]).filter(x=>x&&['user','assistant'].includes(x.role)&&typeof x.content==='string').slice(-8).map(x=>({role:x.role,content:x.content.slice(0,1500)}));
- const page=productContext(j.page);const fallback=contextualReply(question,history,page);
+ const page=productContext(j.page);const profile=salesProfile(question,history,page);const fallback=salesAnswer(question,history,page);
+ // Deterministic answers for explicit browse, checkout and price objections: never over-sell.
+ if(["browse","purchase","objection"].includes(profile.stage))return response(res,200,{...fallback,mode:"library"});
  const refs=retrieve(question+" "+history.filter(x=>x.role==="user").slice(-2).map(x=>x.content).join(" "),8).map(x=>x[2]).join("\n");
- const messages=[{role:"system",content:SYSTEM+"\nVERIFIED TABAQ FACTS:\n"+FACTS+"\nCURRENT PRODUCT: "+(PRODUCT[page]?.name||"None")+"\nREFERENCE EXCERPTS:\n"+refs},...history,{role:"user",content:question}];
+ const messages=[{role:"system",content:SYSTEM+"\n"+SALES_POLICY+"\nCURRENT SHOPPING CONTEXT (stated preferences only): "+JSON.stringify(profile)+"\nVERIFIED TABAQ FACTS:\n"+FACTS+"\nCURRENT PRODUCT: "+(PRODUCT[page]?.name||"None")+"\nREFERENCE EXCERPTS:\n"+refs},...history,{role:"user",content:question}];
  // Explicit owner-supplied Groq credentials only; no automatic purchase or paid-plan activation.
  if(process.env.GROQ_API_KEY){try{const r=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{Authorization:"Bearer "+process.env.GROQ_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({model:"openai/gpt-oss-120b",messages,max_completion_tokens:900,reasoning_effort:"low",temperature:0.65}),signal:AbortSignal.timeout(6500)});if(r.ok){const data=await r.json();const reply=safeCustomerReply(data.choices?.[0]?.message?.content,question,"");if(reply)return response(res,200,{reply,mode:"cloud",model:"openai/gpt-oss-120b",provider:"groq"});}return response(res,200,{...fallback,mode:"library",gatewayStatus:"groq-http-"+r.status});}catch(_){return response(res,200,{...fallback,mode:"library",gatewayStatus:"groq-unavailable"});}}
  if(!token)return response(res,200,{...fallback,mode:'library',gatewayStatus:'no-credential'});

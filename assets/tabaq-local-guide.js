@@ -88,23 +88,104 @@ function contextualReply(question,history=[],page=""){
  return localReply(question,history);
 }
 
-const engine={KB,SYSTEM,FACTS,PRODUCT,retrieve,localReply,safeCustomerReply,contextualReply,productContext};
+/* REV239.5 — consultative retail conversation controller.
+   Discovery, active listening, relevant value framing, sensory simulation,
+   objection resolution, choice simplification, autonomy and permission-based close.
+   No fabricated urgency, coercion, sensitive profiling or automatic cart actions. */
+const SALES_POLICY="Act as a superb luxury fragrance consultant. Listen before recommending. Use the customer's explicitly stated preferences, occasion, dislikes and prior questions; never infer private traits. Answer the immediate question first, then move naturally toward a relevant product or next step only when welcome. One useful question at most. Use sensory imagery and feature-to-benefit framing, not guaranteed compliments. When the customer is ready to purchase, stop discovery and offer the relevant kit link. If price is an objection, acknowledge it, explain the complete five-piece kit and respect their budget. If browsing or declining, give space. Never invent product claims, urgency, testimonials or discounts. Avoid repeating the same scene or question. Never force a sale into an educational or safety answer. Use concise, warm, classy, occasionally witty language.";
+const SALES_TAGS={
+"clean-skin":["fresh","clean","subtle","understated","office","work","everyday","minimal","musk","quiet","pear","light","airy","linen"],
+"soft-bloom":["floral","flowers","petals","romantic","powder","powdery","soft","delicate","brunch","date","pretty"],
+"amber-haze":["warm","rich","woody","woods","spicy","spice","resin","amber","deep","bold","mysterious","evening","dinner","night","intense","strong","heavy"],
+"juice-drift":["fruity","fruit","citrus","guava","bright","playful","social","sunny","summer","weekend","juicy","sweet","energetic"]};
+const SCENE={
+"clean-skin":["Picture a crisp white shirt, mineral air and a whisper of musk.","A quiet, polished signature for days when you want your fragrance to stay close."],
+"soft-bloom":["Think soft petals, blush fruit and a beautifully powdered finish.","A gentle floral mood that feels polished without trying too hard."],
+"amber-haze":["Picture warm evening light, resin, smooth woods and a little spice.","A richer, enveloping direction for dressing up and slowing down."],
+"juice-drift":["Think sparkling citrus, juicy guava and a little holiday sunshine.","A bright, playful direction for warm days and spontaneous plans."]};
+const OCCASION={office:"at the office",work:"for work",everyday:"for everyday wear",dinner:"for dinner",evening:"for the evening",wedding:"for the wedding",date:"for your date",summer:"for warm days",weekend:"for weekends",holiday:"on holiday",gift:"as a gift",brunch:"for brunch"};
+const NO_SALE=/\b(just browsing|looking around|no thanks|not interested|leave me alone|stop selling|no more recommendations|not now)\b/;
+const BUY_NOW=/\b(add (?:it|this|that|the kit) to (?:my )?cart|buy (?:it|this|that|now|the kit)|check ?out|i ll take|ill take|i will take|ready to (?:buy|order)|place (?:an|my) order|how (?:do|can) i (?:buy|order|purchase))\b/;
+const PRICE_OBJECTION=/\b(expensive|pricey|too much money|too much|can t afford|cant afford|cannot afford|over my budget|cheaper|worth it|worth the price|discount|on sale|budget)\b/;
+const TECH=/\b(alcohol|alcoholfree|allergy|allergic|pregnan\w*|eczema|rash|irritation|sensitive skin|safe for|ingredients?|concentration|halal|vegan|cruelty free|certified|ifra|lasts|longevity|how long|projection|sillage)\b/;
+const INFO=/\b(what is|what are|define|meaning|explain|history|invent|chemical|chemistry|distillation|how is|how are|difference between|why does|who was|who invented)\b/;
+const DISCOVERY=/\b(want|looking|love|like|prefer|enjoy|need|recommend|choose|suggest|wear|gift|try|something|which kit|which one|not sure|unsure|undecided|what suits|can t decide|cant decide)\b/;
+function cleanQuery(s){return normalize(s).replace(/\b(alchohol|alchol|alocohol|alcohl)\b/g,"alcohol").replace(/\b(aboy|abot|abou|abt)\b/g,"about");}
+function salesProfile(question,history=[],page=""){
+ const q=cleanQuery(question),turns=history.filter(x=>x&&x.role==="user").slice(-7).map(x=>cleanQuery(x.content)).concat(q);
+ const p={likes:[],dislikes:[],occasion:"",gift:false,budget:false,stage:"discover",selected:productContext(page),match:"",score:0};
+ const tags=[...new Set(Object.values(SALES_TAGS).flat())];
+ for(const t of turns){
+   let rest=t;const negatives=[];
+   rest=rest.replace(/\b(?:hate|dislike|avoid|not a fan of|not keen on|don t like|dont like|do not like|not too|too|no)\s+(?:(?:very|really|overly|much)\s+)?(floral|flowers|sweet|fruity|woody|woods|spicy|spice|warm|rich|strong|intense|powdery|powder|musky|musk|citrus|fresh|heavy|bold)\b/g,(_,w)=>{negatives.push(w);return " ";});
+   for(const w of negatives){p.likes=p.likes.filter(x=>x!==w);if(!p.dislikes.includes(w))p.dislikes.push(w);}
+   if(!INFO.test(t)&&!TECH.test(t))for(const w of tags)if(has(rest,w)&&!negatives.includes(w)){p.dislikes=p.dislikes.filter(x=>x!==w);if(!p.likes.includes(w))p.likes.push(w);}
+   for(const o of Object.keys(OCCASION))if(has(t,o))p.occasion=o;
+   if(/\b(gift|present|for my wife|for my husband|for my friend)\b/.test(t))p.gift=true;
+   if(PRICE_OBJECTION.test(t))p.budget=true;
+ }
+ const named=Object.keys(PRODUCT).filter(k=>has(q,PRODUCT[k].name));if(named.length===1)p.selected=named[0];
+ if(!p.selected)for(const x of history.filter(x=>x&&x.role==="assistant").slice(-5).reverse()){const ids=Object.keys(PRODUCT).filter(k=>has(normalize(x.content),PRODUCT[k].name));if(ids.length===1){p.selected=ids[0];break;}}
+ const scores=Object.keys(PRODUCT).map(id=>({id,n:p.likes.reduce((n,w)=>n+(SALES_TAGS[id].includes(w)?(has(q,w)?3:1):0),0)-p.dislikes.reduce((n,w)=>n+(SALES_TAGS[id].includes(w)?7:0),0)})).sort((a,b)=>b.n-a.n);
+ if(scores[0].n>0){p.match=scores[0].id;p.score=scores[0].n;}
+ if(NO_SALE.test(q))p.stage="browse";else if(TECH.test(q))p.stage="technical";else if(BUY_NOW.test(q))p.stage="purchase";else if(PRICE_OBJECTION.test(q))p.stage="objection";else if(/\b(compare|versus|vs|difference)\b/.test(q))p.stage="compare";else if(INFO.test(q)&&!brandMention(q))p.stage="educate";else if(p.selected)p.stage="evaluate";else if(p.match)p.stage="recommend";
+ return p;
+}
+function salesAnswer(question,history=[],page=""){
+ const q=cleanQuery(question),p=salesProfile(q,history,page),id=p.selected||p.match,product=PRODUCT[id],last=history.filter(x=>x&&x.role==="assistant").at(-1)?.content||"";
+ const ans=(text,kit,action)=>({reply:shortAnswer(text,detailRequested(q)?120:55),...(kit?{kit}:{}),...(action?{action}:{}),stage:p.stage});
+ if(p.stage==="browse")return ans("Of course, enjoy exploring. I'll be here if something catches your eye.");
+ if(/\b(alcohol free|alcoholfree|without alcohol|non alcoholic|oil based|oil perfume)\b/.test(q)){
+  if(brandMention(q)||/\b(your|this|these|kit)\b/.test(q))return ans("Alcohol-free perfume can use oil or another suitable carrier. It can feel softer and closer to the skin. For the exact alcohol content of our kit, I'd love to have our team confirm it for you.");
+  return ans("Alcohol-free perfumes use a carrier other than ethanol, often oil. They can feel beautifully close to the skin, although performance depends on the formula. Are you looking for that softer feel, or avoiding alcohol specifically?");
+ }
+ if(p.stage==="technical"){
+   if(/\b(your|this|these|tabaq|kit|exact)\b/.test(q)&&/\b(ingredients?|concentration|halal|vegan|cruelty free|certified|ifra|alcohol)\b/.test(q))return ans("I'd love to get that right for you. Our team can confirm the exact product details, rather than have me guess.");
+   return contextualReply(q,history,page);
+ }
+ if(p.stage==="purchase"){if(product)return ans("Lovely choice. "+product.name+" is R1,750 / USD 107 before any applicable delivery. Here's the kit so you can add it whenever you're ready.",id,"purchase");return ans("Absolutely. Which of our four moods have you decided on?");}
+ if(p.stage==="objection"){
+  if(/\b(discount|on sale|cheaper)\b/.test(q))return ans("The current kit price is R1,750 / USD 107 before applicable delivery. We don't have a confirmed discount to offer here. Standard South African delivery is free when you choose two or more kits.");
+  return ans("I understand — it should feel worth it. This is a complete four-layer fragrance ritual plus a bonus balm, rather than one bottle. If it isn't quite right for your budget, there's no rush.");
+ }
+ if(p.stage==="compare"){const named=Object.keys(PRODUCT).filter(k=>has(q,PRODUCT[k].name));if(named.length>=2){const [a,b]=named;const best=named.includes(p.match)?p.match:"";return ans(PRODUCT[a].name+" is "+PRODUCT[a].mood+", while "+PRODUCT[b].name+" is "+PRODUCT[b].mood+". "+(best?"For what you've described, I'd lean toward "+PRODUCT[best].name+".":"Which of those moods sounds more like you?"),best);}}
+ if(product&&/\b(what does it smell like|how would it feel|feel to wear|imagine|describe|tell me more|more about it|wear this|this one)\b/.test(q)&&!/\b(price|delivery|shipping|layer|apply)\b/.test(q)){
+  return ans(last.includes(SCENE[id][0])||last.includes(VISION[id])?SCENE[id][1]+" Start gently, then build the essence layers when you'd like more presence.":SCENE[id][0]+" "+PRODUCT[id].name+" is "+product.mood+".",id);
+ }
+ if(/^(yes|sure|please|sounds good|show me|lets see|take a look|yes please)$/.test(q)){
+  if(product&&/\b(look|explore|show|kit|recommend|choice)\b/i.test(last))return ans("Lovely. Here's "+product.name+" so you can explore the complete kit.",id);
+  return ans("Wonderful. Is this for your everyday signature, a special occasion, or a gift?");
+ }
+ if(/\b(layer|layering|ritual|how to use|how to apply|steps|balm|inside|contents|box|price|cost|rand|usd|delivery|shipping|how much)\b/.test(q)||brandMention(q)&&!p.match)return contextualReply(q,history,page);
+ if(p.stage==="educate")return contextualReply(q,history,page);
+ if(p.gift&&!p.likes.length&&!p.selected)return ans("A fragrance gift is a lovely idea. Do they usually wear something fresh and understated, soft and floral, or warm and rich?");
+ if((DISCOVERY.test(q)||p.dislikes.length&&q.split(" ").length<10)&&p.match){
+  const k=p.match,pr=PRODUCT[k],repeat=normalize(last).includes(normalize(pr.name)),reason=p.occasion&&OCCASION[p.occasion]?" I think it would suit you "+OCCASION[p.occasion]+".":"";
+  return ans(repeat?SCENE[k][1]+" I'd stay with "+pr.name+" for what you've described.":SCENE[k][0]+" I'd suggest "+pr.name+"."+reason,k);
+ }
+ if(/\b(not sure|unsure|undecided|can t decide|cant decide|which one|which kit|help me choose|help me find|recommend)\b/.test(q))return ans(product?"You're looking at "+product.name+", a "+product.mood+" direction. Would you prefer something subtle or a scent with more presence?":"Let's make it easy. Is this for everyday wear, a special occasion, or a gift?");
+ return contextualReply(q,history,page);
+}
+function salesChips(p,page){const id=productContext(page)||p.selected||p.match;const kit=PRODUCT[id];if(p.stage==="browse")return [["Explore the collection","What are the four TABAQ kits?"]];if(kit)return [["Imagine wearing it","How would it feel to wear this?"],["What's in the kit?","What's in the kit?"],["How do I layer?","How do I layer this kit?"],["How do I buy?","How do I buy this kit?"]];return [["Everyday signature","I want something fresh and understated for everyday wear."],["Something special","I want something warm and rich for an evening."],["A thoughtful gift","I'm looking for a fragrance gift."],["Ask about fragrance","What is an accord?"]];}
+
+const engine={KB,SYSTEM,FACTS,PRODUCT,retrieve,localReply,safeCustomerReply,contextualReply,productContext,salesProfile,salesAnswer,SALES_POLICY,salesChips};
 if(typeof module==="object"&&module.exports){module.exports=engine;return;}
 if(root.__TABAQ_LOCAL_GUIDE__)return;root.__TABAQ_LOCAL_GUIDE__=true;
 let shell,panel,messages,input,status,launcher,enableBtn,downloadNote,send,notice,session=null,preparing=false,busy=false,history=[],cloud=true,autoShown=false;
-const WELCOME="Hi, I’m Layla. Welcome to TABAQ! We make fragrance a little more personal with four beautifully coordinated layers and a bonus balm. Shall we find a scent that feels unmistakably you?";
+const WELCOME="Welcome to TABAQ, I’m Layla. Here, fragrance is yours to create, with four coordinated layers and a little balm. Are you looking for an everyday signature, something special, or a gift?";
 const SESSION_KEY="tabaq_layla_session_v2";
 const currentProduct=productContext(location.pathname);
-let transcript=[],restoring=false;
+let transcript=[],restoring=false,quickPanel;
 function readVisit(){try{const x=JSON.parse(sessionStorage.getItem(SESSION_KEY)||"null");return x&&Date.now()-x.updated<7200000?x:null;}catch(_){return null;}}
 function saveVisit(){if(restoring||!shell)return;try{sessionStorage.setItem(SESSION_KEY,JSON.stringify({updated:Date.now(),open:shell.classList.contains("is-open"),history:history.slice(-16),transcript:transcript.slice(-24),page:location.pathname}));}catch(_){}}
 const create=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!=null)n.textContent=txt;return n;};
 function state(t,mode){status.textContent=t;status.className="tabaq-guide-status"+(mode?" "+mode:"");}
 function bubble(t,role="bot",record=true){const n=create("div","tabaq-guide-msg "+role,t);messages.append(n);if(record&&!restoring){const item={role,text:String(t).slice(0,1500)};transcript.push(item);n._laylaRecord=item;saveVisit();}messages.scrollTop=messages.scrollHeight;return n;}
+function renderSalesChips(){if(!quickPanel)return;const last=history.filter(x=>x.role==="user").at(-1)?.content||"";const p=salesProfile(last,history.slice(0,-1),currentProduct);quickPanel.replaceChildren();for(const [label,question]of salesChips(p,currentProduct)){const b=create("button","",label);b.type="button";b.onclick=()=>ask(question);quickPanel.append(b);}}
 function kitLink(box,id){if(!PRODUCT[id])return;const a=create("a","layla-kit-link","Explore "+PRODUCT[id].name+" →");a.href="/"+id+".html";a.addEventListener("click",()=>{if(box._laylaRecord)box._laylaRecord.kit=id;saveVisit();});box.append(a);if(box._laylaRecord){box._laylaRecord.kit=id;saveVisit();}}
 function open(focus=true){shell.classList.add("is-open");launcher.setAttribute("aria-expanded","true");notice.hidden=true;autoShown=true;try{sessionStorage.setItem("layla_welcomed","1");}catch(_){}if(focus)input.focus({preventScroll:true});if(!cloud)prepareLocal(false);saveVisit();}
 function close(){shell.classList.remove("is-open");launcher.setAttribute("aria-expanded","false");saveVisit();}
-async function prepareLocal(activated){if(session||preparing||!root.LanguageModel)return;preparing=true;try{const opt={expectedInputs:[{type:"text",languages:["en"]}],expectedOutputs:[{type:"text",languages:["en"]}]};const avail=await root.LanguageModel.availability(opt);if(avail==="unavailable")return;if(avail!=="available"&&!activated){enableBtn.classList.add("is-visible");downloadNote.classList.add("is-visible");return;}if(!cloud)state("Starting on-device AI","is-download");session=await root.LanguageModel.create({...opt,initialPrompts:[{role:"system",content:SYSTEM+"\n"+FACTS}],monitor(m){m.addEventListener("downloadprogress",e=>{downloadNote.textContent="Downloading browser AI · "+Math.round((Number(e.loaded)||0)*100)+"%";});}});enableBtn.classList.remove("is-visible");downloadNote.classList.remove("is-visible");if(!cloud)state("On-device AI","is-ai");}catch(_){session=null;}finally{preparing=false;}}
+async function prepareLocal(activated){if(session||preparing||!root.LanguageModel)return;preparing=true;try{const opt={expectedInputs:[{type:"text",languages:["en"]}],expectedOutputs:[{type:"text",languages:["en"]}]};const avail=await root.LanguageModel.availability(opt);if(avail==="unavailable")return;if(avail!=="available"&&!activated){enableBtn.classList.add("is-visible");downloadNote.classList.add("is-visible");return;}if(!cloud)state("Starting on-device AI","is-download");session=await root.LanguageModel.create({...opt,initialPrompts:[{role:"system",content:SYSTEM+"\n"+SALES_POLICY+"\n"+FACTS}],monitor(m){m.addEventListener("downloadprogress",e=>{downloadNote.textContent="Downloading browser AI · "+Math.round((Number(e.loaded)||0)*100)+"%";});}});enableBtn.classList.remove("is-visible");downloadNote.classList.remove("is-visible");if(!cloud)state("On-device AI","is-ai");}catch(_){session=null;}finally{preparing=false;}}
 async function ask(question){
  if(busy)return;question=question.trim().slice(0,1000);if(!question)return;
  busy=true;send.disabled=true;input.disabled=true;const past=history.slice(-8);bubble(question,"user");history.push({role:"user",content:question});
@@ -114,11 +195,11 @@ async function ask(question){
  if(r.ok){const j=await r.json();if(typeof j.reply==="string"&&j.reply.trim()){result=j;mode=j.mode||"library";cloud=mode==="cloud";}}
  }catch(_){}
  if((!result||mode==="library")&&session){try{const notes=retrieve(question,6).map(x=>x[2]).join("\n");const reply=await session.prompt("Relevant knowledge: "+notes+"\nRecent conversation: "+JSON.stringify(past)+"\nCustomer question: "+question+"\nCurrent product: "+(PRODUCT[currentProduct]?.name||"None"),{signal:AbortSignal.timeout(2500)});if(reply&&reply.trim()){result={reply};mode="device";}}catch(_){session=null;}}
- if(!result)result=contextualReply(question,past,currentProduct);
- pending.textContent=safeCustomerReply(result.reply,question,contextualReply(question,past,currentProduct).reply);history.push({role:"assistant",content:pending.textContent});history=history.slice(-16);const item={role:"bot",text:pending.textContent};transcript.push(item);pending._laylaRecord=item;
+ if(!result)result=salesAnswer(question,past,currentProduct);
+ pending.textContent=safeCustomerReply(result.reply,question,salesAnswer(question,past,currentProduct).reply);history.push({role:"assistant",content:pending.textContent});history=history.slice(-16);const item={role:"bot",text:pending.textContent};transcript.push(item);pending._laylaRecord=item;
  if(result.kit)kitLink(pending,result.kit);
  else if(mode==="cloud"){const names=Object.keys(PRODUCT).filter(k=>pending.textContent.toLowerCase().includes(PRODUCT[k].name.toLowerCase()));if(names.length===1&&/\b(recommend|choose|want|wear|prefer|looking|suggest|kit|buy|gift)\b/i.test(question))kitLink(pending,names[0]);}
- state("Here to help",mode==="library"?"":"is-ai");
+ state("Here to help",mode==="library"?"":"is-ai");renderSalesChips();
  saveVisit();busy=false;send.disabled=false;input.disabled=false;messages.scrollTop=messages.scrollHeight;if(shell.classList.contains("is-open"))input.focus({preventScroll:true});
 }
 function build(){
@@ -126,7 +207,7 @@ function build(){
  panel=create("section","tabaq-guide-panel");panel.setAttribute("aria-label","Layla, TABAQ AI fragrance concierge");
  const head=create("header","tabaq-guide-head");head.append(create("p","tabaq-guide-kicker","Your fragrance concierge · AI"),create("h2","","Layla"));status=create("div","tabaq-guide-status","Here to help");head.append(status);const exit=create("button","tabaq-guide-close","×");exit.type="button";exit.setAttribute("aria-label","Close Layla");head.append(exit);
  messages=create("div","tabaq-guide-messages");messages.setAttribute("role","log");messages.setAttribute("aria-live","polite");
- const quick=create("div","tabaq-guide-quick");[["Fresh & effortless","I want something fresh and understated for every day."],["Warm & unforgettable","I want something warm and rich for evenings."],["How do I layer?","How do I layer a TABAQ kit?"],["Ask about fragrance","What is an accord?"]].forEach(([l,q])=>{const b=create("button","",l);b.type="button";b.onclick=()=>ask(q);quick.append(b);});
+ const quick=create("div","tabaq-guide-quick");quickPanel=quick;
  enableBtn=create("button","tabaq-guide-enable","Enable on-device AI");enableBtn.type="button";enableBtn.onclick=()=>prepareLocal(true);
  downloadNote=create("div","tabaq-guide-download","Optional browser AI may download a model once.");
  const form=create("form","tabaq-guide-form");input=create("input");input.type="text";input.placeholder="Ask me anything about fragrance…";input.maxLength=1000;input.setAttribute("aria-label","Message Layla");send=create("button","","Send");send.type="submit";form.append(input,send);
@@ -135,7 +216,7 @@ function build(){
  notice=create("div","layla-welcome");notice.hidden=true;const invite=create("button","layla-invite","Hi, I’m Layla. Let me help you find your signature scent.");invite.type="button";invite.onclick=()=>open();const dismiss=create("button","layla-dismiss","×");dismiss.type="button";dismiss.setAttribute("aria-label","Dismiss Layla welcome");dismiss.onclick=()=>{notice.hidden=true;};notice.append(invite,dismiss);
  shell.append(panel,notice,launcher);document.body.append(shell);
  const visit=readVisit();if(visit){restoring=true;history=Array.isArray(visit.history)?visit.history.filter(x=>x&&["user","assistant"].includes(x.role)&&typeof x.content==="string").slice(-16):[];transcript=Array.isArray(visit.transcript)?visit.transcript.filter(x=>x&&["user","bot"].includes(x.role)&&typeof x.text==="string").slice(-24):[];for(const item of transcript){const n=bubble(item.text,item.role,false);n._laylaRecord=item;if(item.kit)kitLink(n,item.kit);}restoring=false;if(!transcript.length)bubble(WELCOME);if(visit.open){open(false);if(currentProduct&&productContext(visit.page)!==currentProduct){const intro=bubble(VISION[currentProduct]+" Ask me anything about this kit.");history.push({role:"assistant",content:intro.textContent});history=history.slice(-16);saveVisit();}}else saveVisit();}else{bubble(WELCOME);saveVisit();}
- window.addEventListener("pagehide",saveVisit);
+ renderSalesChips();window.addEventListener("pagehide",saveVisit);
  launcher.onclick=()=>shell.classList.contains("is-open")?close():open();exit.onclick=()=>{close();launcher.focus();};form.onsubmit=e=>{e.preventDefault();if(busy)return;const q=input.value;input.value="";ask(q);};
  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&shell.classList.contains("is-open"))close();});
  if(!visit&&(location.pathname==="/"||/\/index\.html$/.test(location.pathname))){let seen=false;try{seen=sessionStorage.getItem("layla_welcomed")==="1";}catch(_){}if(!seen)setTimeout(()=>{if(!shell.classList.contains("is-open")&&!autoShown&&!document.body.matches(".waitlist-open,.cart-open,.menu-open,.modal-open,.quote-open,.finder-open")&&window.scrollY<window.innerHeight*.8){notice.hidden=false;autoShown=true;try{sessionStorage.setItem("layla_welcomed","1");}catch(_){}setTimeout(()=>{notice.hidden=true;},10000);}},4200);}

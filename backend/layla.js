@@ -5,6 +5,9 @@ const {commerceRecord}=require('./layla-commerce');
 const MASTER_REFERENCE=require('./layla-public-reference.json');
 const REF_CHUNKS=MASTER_REFERENCE.text.split(/\n(?=## )/).map(s=>s.trim()).filter(Boolean);
 function referenceFor(q){const words=String(q).toLowerCase().match(/[a-z]{4,}/g)||[];return REF_CHUNKS.map(s=>({s,n:[...new Set(words)].filter(w=>s.toLowerCase().includes(w)).length})).filter(x=>x.n>0).sort((a,b)=>b.n-a.n).slice(0,2).map(x=>x.s.slice(0,2200)).join('\n\n');}
+/* REV239.17 — server-side Groq-first failover, no browser credential or paid-plan activation. */
+const GROQ_MODELS=['openai/gpt-oss-120b','openai/gpt-oss-20b'];
+let groqStatus='not-tested';
 const MODELS=['nvidia/nemotron-3.5-lightning-free','reflection/beam-free'];
 const BASE='https://ai-gateway.vercel.sh/v1';
 const LIMIT=20,WINDOW=60000;const buckets=new Map();let pricing={expires:0,ids:[]},pricingPromise=null;let gatewayStatus='not-tested';
@@ -44,7 +47,7 @@ function groundReply(reply,question,fallback,plan){
  return text;
 }
 async function handle(req,res){
- const token=auth(req);if(req.method==='GET')return response(res,200,{ok:true,concierge:'Layla',revision:'239.11',groqConfigured:!!process.env.GROQ_API_KEY,cloudConfigured:!!token||!!process.env.GROQ_API_KEY,freeModels:MODELS,knowledgeEntries:KB.length,masterReferenceSections:REF_CHUNKS.length,commerceMode:commerceRecord().state,paidFallback:false,gatewayStatus});
+ const token=auth(req);if(req.method==='GET')return response(res,200,{ok:true,concierge:'Layla',revision:'239.17',groqConfigured:!!process.env.GROQ_API_KEY,cloudConfigured:!!token||!!process.env.GROQ_API_KEY,freeModels:MODELS,knowledgeEntries:KB.length,masterReferenceSections:REF_CHUNKS.length,commerceMode:commerceRecord().state,paidFallback:false,groqModels:GROQ_MODELS,groqStatus,gatewayStatus});
  if(req.method!=='POST')return response(res,405,{error:'method_not_allowed'});
  const origin=req.headers.origin;let host='';try{host=new URL(origin||'https://'+req.headers.host).hostname;}catch(_){}if(origin&&host!==String(req.headers.host||'').split(':')[0])return response(res,403,{error:'origin_not_allowed'});
  if(!permitted(req))return response(res,429,{error:'Please try again in a minute.'});
@@ -59,10 +62,26 @@ async function handle(req,res){
  const refs=retrieve(question+" "+history.filter(x=>x.role==="user").slice(-2).map(x=>x.content).join(" "),8).filter(x=>x[0]!=="TABAQ").map(x=>x[2]).join("\n");
  const messages=[{role:"system",content:SYSTEM+"\n"+SALES_POLICY+"\n"+MASTER_POLICY+"\n"+LAYLA_VOICE+"\n"+CULTURAL_POLICY+"\nGUIDED RETAIL: Answer the customer first. For a product recommendation use only published scent profiles and the existing verified links. Offer the optional tour if useful. Never claim to navigate or register someone without their choice.\nPRODUCT SCENT PROFILES (descriptive notes, not ingredients): "+JSON.stringify(PRODUCT)+"\nCURRENT SHOPPING CONTEXT (stated preferences only): "+JSON.stringify({...profile,commerce:undefined,...(plan?{selected:null,match:null,stage:"occasion"}:{})})+"\nPUBLIC CATALOGUE (no unverified stock or release claims): "+JSON.stringify(commerce)+"\nCURRENT PRODUCT: "+(plan?"Ignored for new occasion recommendation":PRODUCT[page]?.name||"None")+"\nOCCASION PLAN: "+(plan?JSON.stringify(plan)+" — preserve these recommendation choices and the useful question; phrase naturally. Do not substitute the viewed kit.": "No occasion override")+"\nREFERENCE EXCERPTS:\n"+refs+"\nGENERAL MASTER REFERENCE:\n"+referenceFor(question)},...history,{role:"user",content:question}];
  // Explicit owner-supplied Groq credentials only; no automatic purchase or paid-plan activation.
- if(process.env.GROQ_API_KEY){try{const r=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{Authorization:"Bearer "+process.env.GROQ_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({model:"openai/gpt-oss-120b",messages,max_completion_tokens:900,reasoning_effort:"low",temperature:0.65}),signal:AbortSignal.timeout(6500)});if(r.ok){const data=await r.json();const reply=groundReply(data.choices?.[0]?.message?.content,question,fallback,plan);if(reply)return answer({reply,mode:plan&&reply===fallback.reply?"library":"cloud",model:"openai/gpt-oss-120b",provider:"groq",...recommendationLinks(reply,question,profile,commerce,fallback)});}return answer({...fallback,mode:"library",gatewayStatus:"groq-http-"+r.status});}catch(_){return answer({...fallback,mode:"library",gatewayStatus:"groq-unavailable"});}}
- if(!token)return answer({...fallback,mode:'library',gatewayStatus:'no-credential'});
+ const deadline=Date.now()+10500;
+ if(process.env.GROQ_API_KEY){
+  for(const [index,model] of GROQ_MODELS.entries()){
+   const remaining=deadline-Date.now();if(remaining<500)break;
+   try{
+    const r=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{Authorization:"Bearer "+process.env.GROQ_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({model,messages,max_completion_tokens:900,reasoning_effort:"low",temperature:0.65}),signal:AbortSignal.timeout(Math.min(remaining,index===0?3800:3200))});
+    if(!r.ok){groqStatus="http-"+r.status;if(r.status===401||r.status===403||r.status===429)break;continue;}
+    const data=await r.json();const content=data.choices?.[0]?.message?.content;
+    if(typeof content!=="string"||!content.trim()){groqStatus="empty-response";continue;}
+    const reply=groundReply(content,question,fallback,plan);
+    if(reply){groqStatus="connected";return answer({reply,mode:plan&&reply===fallback.reply?"library":"cloud",model,provider:"groq",...recommendationLinks(reply,question,profile,commerce,fallback)});}
+    groqStatus="rejected-response";
+   }catch(_){groqStatus="unavailable";}
+  }
+  console.warn("[Layla] Groq fallback:",groqStatus);
+ }else groqStatus="not-configured";
+
+ if(!token)return answer({...fallback,mode:'library',gatewayStatus:'no-gateway-credential',groqStatus});
  const models=await zeroModels(token);if(!models.length)return answer({...fallback,mode:'library',gatewayStatus});
- const deadline=Date.now()+7300;for(const model of models){const remaining=deadline-Date.now();if(remaining<700)break;try{const r=await fetch(BASE+'/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model,messages,max_tokens:1000,temperature:0.65}),signal:AbortSignal.timeout(Math.min(remaining,models.length>1&&model===models[0]?4400:remaining))});if(!r.ok){gatewayStatus='model-http-'+r.status;continue;}const data=await r.json();const reply=data.choices?.[0]?.message?.content;if(typeof reply==='string'&&reply.trim()){const polished=groundReply(reply,question,fallback,plan);if(polished){gatewayStatus='connected';return answer({reply:polished,mode:'cloud',model,...recommendationLinks(polished,question,profile,commerce,fallback)});}}gatewayStatus='empty-response';}catch(_){gatewayStatus='model-timeout';}}
+ for(const model of models){const remaining=deadline-Date.now();if(remaining<700)break;try{const r=await fetch(BASE+'/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model,messages,max_tokens:1000,temperature:0.65}),signal:AbortSignal.timeout(Math.min(remaining,models.length>1&&model===models[0]?4400:remaining))});if(!r.ok){gatewayStatus='model-http-'+r.status;continue;}const data=await r.json();const reply=data.choices?.[0]?.message?.content;if(typeof reply==='string'&&reply.trim()){const polished=groundReply(reply,question,fallback,plan);if(polished){gatewayStatus='connected';return answer({reply:polished,mode:'cloud',model,...recommendationLinks(polished,question,profile,commerce,fallback)});}}gatewayStatus='empty-response';}catch(_){gatewayStatus='model-timeout';}}
  return answer({...fallback,mode:'library',gatewayStatus});
 }
 module.exports={handle};

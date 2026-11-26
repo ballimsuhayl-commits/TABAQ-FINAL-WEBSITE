@@ -599,7 +599,7 @@ async function ask(question){
  saveVisit();const pending=bubble("Let me think…","bot",false);let result=null,mode="library";
  try{
  if(sensitive){result=masterAnswer(question,past,currentProduct);mode="library";}else if(/^(end tour|stop tour|stop the tour|end the tour)$/.test(cleanQuery(question))){result={reply:"Of course. Enjoy exploring at your own pace.",locked:true};}else if(tourRequest(question)&&!NO_SALE.test(cleanQuery(question))){result={reply:"I’d love to show you around. Five little stops, at your pace — shall we start with the layering system?",tour:true,locked:true};}else{
- const r=await fetch("/api/layla",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:question,history:past,page:currentProduct}),signal:AbortSignal.timeout(9500)});
+ const r=await fetch("/api/layla",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:question,history:past,page:currentProduct}),signal:AbortSignal.timeout(13000)});
  if(r.ok){const j=await r.json();if(typeof j.reply==="string"&&j.reply.trim()){result=j;mode=j.mode||"library";if(mode==="cloud")cloud=true;}}}
  }catch(_){}
  if((!result||mode==="library")&&session&&!sensitive&&!result?.locked&&!masterPreflight(question,past,currentProduct)&&!["browse","purchase","objection"].includes(salesProfile(question,past,currentProduct).stage)){try{const notes=retrieve(question,6).filter(x=>x[0]!=="TABAQ").map(x=>x[2]).join("\n");const reply=await session.prompt("Relevant knowledge: "+notes+"\nRecent conversation: "+JSON.stringify(past)+"\nCustomer question: "+question+"\nCurrent product: "+(PRODUCT[currentProduct]?.name||"None")+"\nStated shopping context: "+JSON.stringify(salesProfile(question,past,currentProduct)),{signal:AbortSignal.timeout(2500)});if(reply&&reply.trim()){result={reply};mode="device";}}catch(_){session=null;}}
@@ -614,9 +614,9 @@ async function ask(question){
  saveVisit();busy=false;send.disabled=false;input.disabled=false;messages.scrollTop=messages.scrollHeight;if(shell.classList.contains("is-open")&&!compactMobile())input.focus({preventScroll:true});
 }
 function build(){
- shell=create("div","tabaq-guide-shell");launcher=create("button","tabaq-guide-launcher");launcher.type="button";launcher.setAttribute("aria-expanded","false");launcher.setAttribute("aria-label","Hey, I’m Layla. How can I help you? Open AI fragrance concierge.");
- panel=create("section","tabaq-guide-panel");panel.setAttribute("aria-label","Layla, TABAQ AI fragrance concierge");
- const head=create("header","tabaq-guide-head");head.append(create("p","tabaq-guide-kicker","Your fragrance concierge · AI"),create("h2","","Layla"));status=create("div","tabaq-guide-status","Here to help");head.append(status);headSlot=create("div","layla-head-art");head.append(headSlot);const exit=create("button","tabaq-guide-close","×");exit.type="button";exit.setAttribute("aria-label","Close Layla");head.append(exit);
+ shell=create("div","tabaq-guide-shell");launcher=create("button","tabaq-guide-launcher");launcher.type="button";launcher.setAttribute("aria-expanded","false");launcher.setAttribute("aria-label","Hey, I’m Layla. How can I help you? Open Layla.");
+ panel=create("section","tabaq-guide-panel");panel.setAttribute("aria-label","Chat with Layla");
+ const head=create("header","tabaq-guide-head");head.append(create("h2","","Layla"));status=create("div","tabaq-guide-status","Here to help");head.append(status);headSlot=create("div","layla-head-art");head.append(headSlot);const exit=create("button","tabaq-guide-close","×");exit.type="button";exit.setAttribute("aria-label","Close Layla");head.append(exit);
  messages=create("div","tabaq-guide-messages");messages.setAttribute("role","log");messages.setAttribute("aria-live","polite");
  const quick=create("div","tabaq-guide-quick");quickPanel=quick;
  enableBtn=create("button","tabaq-guide-enable","Enable on-device AI");enableBtn.type="button";enableBtn.onclick=()=>prepareLocal(true);

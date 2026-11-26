@@ -387,14 +387,18 @@ function portraitReply(question,history=[],commerce){
  if(!active&&!requested)return null;
  if(NO_SALE.test(q)||masterSensitive(question)||/\b(refund|complaint|payment|injury|return my|order status|stop|cancel|don t want)\b/.test(q))return null;
  if(active&&!requested&&/\b(what is|how much|how do|when|where|price|shipping|delivery|ingredients|concentration)\b/.test(q))return null;
- const past=history.filter(x=>x.role==="user").slice(-8).map(x=>cleanQuery(x.content));
+ // Only use stated preferences from the active discovery exchange, not unrelated product questions.
+ const lastPrompt=history.map(x=>x.role==="assistant"&&x.content.includes(PORTRAIT_ASK)).lastIndexOf(true);
+ const past=active&&lastPrompt>=0?history.slice(lastPrompt+1).filter(x=>x.role==="user").map(x=>cleanQuery(x.content)):[];
  const positives=new Set(),negatives=new Set();
+ const vocab=[...new Set([...PORTRAIT_AXES.flatMap(a=>a[2]),...SCENT_NOTES.flatMap(n=>SCENT_ALIASES[n.toLowerCase()]||[n.toLowerCase()])])];
  for(const t of [...past,q]){
- const stripped=t.replace(/\b(?:hate|dislike|avoid|not a fan of|not keen on|don t like|dont like|do not like|not too|too|no)\s+(?:(?:very|really|overly|much)\s+)?([a-z]+(?:\s+[a-z]+)?)/g,(_,w)=>{for(const a of PORTRAIT_AXES)for(const term of a[2])if(has(w,term)){negatives.add(term);positives.delete(term);}return " ";});
- for(const a of PORTRAIT_AXES)for(const term of a[2])if(has(stripped,term)&&!negatives.has(term))positives.add(term);
+  const clauses=t.split(/\b(?:but|however|although)\b|\band\s+(?=(?:i\s+)?(?:hate|dislike|avoid|not|don t like|dont like|do not like|no|like|love|prefer|enjoy|want)\b)|\s+(?=not\s+(?!a fan|keen|too))/);
+  for(const clause of clauses){
+   const negative=/\b(?:hate|dislike|avoid|not a fan|not keen|don t like|dont like|do not like|not too|too|no|not)\b/.test(clause);
+   for(const term of vocab)if(has(clause,term)){if(negative){negatives.add(term);positives.delete(term);}else if(!negatives.has(term))positives.add(term);}
+  }
  }
- // Include explicit note vocabulary in the portable match, independent of the family ranking.
- for(const t of [...past,q]){for(const name of SCENT_NOTES){for(const term of (SCENT_ALIASES[name.toLowerCase()]||[name.toLowerCase()])){if(!has(t,term))continue;const clauses=t.split(/\b(?:but|however|although)\b|[,.!;?]/);for(const clause of clauses){if(!has(clause,term))continue;if(/\b(?:hate|dislike|avoid|not a fan|not keen|don t like|dont like|do not like|not too|too|no)\b/.test(clause)){negatives.add(term);positives.delete(term);}else if(!negatives.has(term))positives.add(term);}}}}
  const ranked=PORTRAIT_AXES.map(a=>({a,n:a[2].filter(w=>positives.has(w)).length})).filter(a=>a.n>0).sort((a,b)=>b.n-a.n);
  const count=history.filter(x=>x.role==="assistant"&&x.content.includes(PORTRAIT_ASK)).length;
  if(!ranked.length&&count<2)return{reply:PORTRAIT_ASK+" What do you love smelling — fresh air, flowers, warm woods, juicy fruit or something sweeter?",locked:true,stage:"portrait"};
@@ -457,7 +461,7 @@ function motionIntent(question,result={},profile={}){
  return String(result.reply||"").includes("?")?"discover":"explain";
 }
 
-const engine={KB,SYSTEM,FACTS,PRODUCT,retrieve,localReply,safeCustomerReply,contextualReply,productContext,salesProfile,salesAnswer,SALES_POLICY,salesChips,MASTER_POLICY,MASTER_LINKS,masterSensitive,cleanHistory,masterContext,masterPreflight,masterAnswer,normalizeCommerce,technicalLevel,LAYLA_VOICE,CULTURAL_POLICY,portraitReply,MOTION_CUES,motionIntent};
+const engine={SCENT_MATCH,scentMatchSections,KB,SYSTEM,FACTS,PRODUCT,retrieve,localReply,safeCustomerReply,contextualReply,productContext,salesProfile,salesAnswer,SALES_POLICY,salesChips,MASTER_POLICY,MASTER_LINKS,masterSensitive,cleanHistory,masterContext,masterPreflight,masterAnswer,normalizeCommerce,technicalLevel,LAYLA_VOICE,CULTURAL_POLICY,portraitReply,MOTION_CUES,motionIntent};
 if(typeof module==="object"&&module.exports){module.exports=engine;return;}
 if(root.__TABAQ_LOCAL_GUIDE__)return;root.__TABAQ_LOCAL_GUIDE__=true;
 let shell,panel,messages,input,status,launcher,enableBtn,downloadNote,send,notice,session=null,preparing=false,busy=false,history=[],cloud=true,autoShown=false;

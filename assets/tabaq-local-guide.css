@@ -68,3 +68,26 @@ body.menu-open .tabaq-guide-shell,body.cart-open .tabaq-guide-shell,body.modal-o
   .tabaq-guide-shell.is-open:has(.tabaq-guide-form input:focus) .layla-head-art{width:50px;height:66px;right:34px}
   .tabaq-guide-shell.is-open:has(.tabaq-guide-form input:focus) .tabaq-guide-head:before{width:93px;height:93px;right:9px;top:-7px}
 }
+
+/* REV239.16 — large, gesture-readable mobile Layla. Original artwork and motion preserved. */
+@media (max-width:700px) and (orientation:portrait){
+ .tabaq-guide-launcher{width:min(355px,calc(100vw - 20px));height:clamp(205px,60vw,260px);overflow:visible}
+ .tabaq-guide-launcher .layla-launcher-art{flex:0 0 clamp(162px,47.5vw,206px);height:100%;min-width:0}
+ .layla-launcher-speech{align-self:flex-end;margin-bottom:clamp(30px,12vw,55px);padding:9px 10px}
+ .layla-launcher-copy{font-size:13px}
+ .tabaq-guide-head{min-height:196px;padding:14px 168px 12px 12px}
+ .layla-head-art{width:clamp(130px,39vw,154px);height:clamp(164px,49vw,194px);right:8px;bottom:0}
+ .tabaq-guide-head:before{width:192px;height:192px;right:-12px;top:-8px}
+ .tabaq-guide-close{right:7px;top:7px}
+ .tabaq-guide-shell.is-open .tabaq-guide-panel{height:min(60dvh,520px,calc(var(--layla-vh,100dvh) * .72))}
+ .tabaq-guide-shell.is-open:has(.tabaq-guide-form input:focus) .tabaq-guide-head{min-height:76px;padding:7px 96px 8px 12px}
+ .tabaq-guide-shell.is-open:has(.tabaq-guide-form input:focus) .layla-head-art{width:60px;height:76px;right:32px}
+ .tabaq-guide-shell.is-open:has(.tabaq-guide-form input:focus) .tabaq-guide-head:before{width:93px;height:93px;right:9px;top:-7px}
+}
+@media (max-width:700px) and (orientation:portrait) and (max-height:620px){
+ .tabaq-guide-launcher{height:clamp(170px,35dvh,205px)}
+ .tabaq-guide-launcher .layla-launcher-art{flex-basis:clamp(135px,27.7dvh,162px)}
+ .tabaq-guide-head{min-height:128px;padding-right:116px}
+ .layla-head-art{width:101px;height:128px;right:8px}
+ .tabaq-guide-head:before{width:145px;height:145px}
+}

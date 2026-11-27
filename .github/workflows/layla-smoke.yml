@@ -1,0 +1,41 @@
+name: Layla production smoke test
+on:
+  push:
+    paths:
+      - 'backend/layla.js'
+      - 'assets/tabaq-local-guide.js'
+      - '.github/workflows/layla-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Verify production cloud conversation
+        run: |
+          python - <<'PY'
+          import json, time, urllib.request, urllib.error
+          url='https://www.houseoftabaq.com/api/layla'
+          for attempt in range(8):
+              try:
+                  with urllib.request.urlopen(url, timeout=12) as r:
+                      health=json.load(r)
+                  if health.get('cloudConfigured'):
+                      break
+              except Exception as e:
+                  print(type(e).__name__)
+              time.sleep(5)
+          else:
+              raise SystemExit('Cloud configuration unavailable')
+          request=urllib.request.Request(url,data=json.dumps({'message':'Can you describe an imaginary perfume inspired by a rainy garden?','history':[]}).encode(),headers={'Content-Type':'application/json','Origin':'https://www.houseoftabaq.com','User-Agent':'TABAQ production health check'},method='POST')
+          try:
+              with urllib.request.urlopen(request,timeout=25) as r:
+                  result=json.load(r)
+          except urllib.error.HTTPError as e:
+              raise SystemExit('HTTP '+str(e.code))
+          print(json.dumps({k:result.get(k) for k in ['mode','provider','model','gatewayStatus','groqStatus']}))
+          if not result.get('reply') or result.get('mode')!='cloud':
+              raise SystemExit('Live model response unavailable')
+          PY

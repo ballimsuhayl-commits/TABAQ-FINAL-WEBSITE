@@ -622,8 +622,8 @@ function build(){
  enableBtn=create("button","tabaq-guide-enable","Enable on-device AI");enableBtn.type="button";enableBtn.onclick=()=>prepareLocal(true);
  downloadNote=create("div","tabaq-guide-download","Optional browser AI may download a model once.");
  const form=create("form","tabaq-guide-form");input=create("input");input.type="text";input.placeholder="Ask me anything about fragrance…";input.maxLength=1000;input.setAttribute("aria-label","Message Layla");send=create("button","","Send");send.type="submit";form.append(input,send);
- const privacy=create("p","tabaq-guide-privacy","Messages may use AI providers. Don’t share private or payment details. ");const link=create("a","","Privacy");link.href="/privacy.html";privacy.append(link);const clear=create("button","layla-clear-chat","Clear chat");clear.type="button";clear.addEventListener("click",()=>{if(!busy)ask("Clear my chat");});privacy.append(" · ",clear);
- panel.append(head,messages,quick,enableBtn,downloadNote,form,privacy);
+ // REV239.18 — remove visible footer; typed chat reset and dedicated privacy page remain.
+ panel.append(head,messages,quick,enableBtn,downloadNote,form);
  /* REV239.13 — the character and speech bubble are the sole permanent launcher. */
  welcomeSlot=create("span","layla-launcher-art");const speech=create("span","layla-launcher-speech");speech.append(create("span","layla-launcher-kicker","TABAQ · AI CONCIERGE"),create("span","layla-launcher-copy",WELCOME));launcher.append(speech,welcomeSlot);makeAvatar();
  shell.append(panel,launcher);document.body.append(shell);syncLaylaViewport();window.visualViewport?.addEventListener("resize",syncLaylaViewport,{passive:true});window.visualViewport?.addEventListener("scroll",syncLaylaViewport,{passive:true});window.addEventListener("resize",syncLaylaViewport,{passive:true});

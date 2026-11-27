@@ -476,11 +476,34 @@ let avatar,avatarStage,avatarPoster,avatarAnim=null,avatarPending=null,avatarRea
 const reducedMotion=matchMedia("(prefers-reduced-motion: reduce)");
 const CLIPS={welcome:[0,84],idle:[84,264],blink:[264,309],greet_wave:[309,399],listening:[399,539],curious:[539,639],thinking:[639,799],explaining:[799,924],recommend:[924,1029],amused:[1029,1109],delighted:[1109,1194],reassure:[1194,1309],farewell:[1309,1419],technical:[1419,1549],compare:[1549,1694],occasion:[1694,1819],gift:[1819,1929],vision:[1929,2079],layer:[2079,2224],tour:[2224,2334],show_product:[2334,2449],portrait:[2449,2564],share:[2564,2654],drop:[2654,2779],price:[2779,2889],objection:[2889,3039],support:[3039,3194],decline:[3194,3294],thanks:[3294,3389],purchase:[3389,3494],success:[3494,3589],error:[3589,3729]};
 const CUE_LABEL={welcome:"Welcome",idle:"Here to help",blink:"Here to help",greet:"Hello",listen:"Listening",discover:"Discovering your taste",think:"Considering your question",explain:"Fragrance notes",technical:"Fragrance science",compare:"Comparing scents",recommend:"A suggestion for you",occasion:"For your occasion",gift:"Finding a gift",vision:"Imagine the scent",layer:"The art of layering",tour:"Your private tour",show_product:"Explore the collection",portrait:"Your scent portrait",share:"Made to share",drop:"Drop access",price:"The details",objection:"Let’s make it clear",support:"Here to help",safety:"Your wellbeing first",privacy:"Your privacy",decline:"Enjoy exploring",thanks:"You’re welcome",humour:"A little playfulness",purchase:"Your chosen kit",success:"Lovely!",farewell:"See you again",error:"Let’s try again"};
+/* REV239.20 — autonomous, visible-only ambient choreography.
+   Keep the single existing Lottie renderer. No chat, sales prompts or AI calls are triggered by ambient motion. */
+let ambientTimer=0,ambientIndex=0,ambientCue=false,motionPlaying=false;
+const AMBIENT_CLOSED=["idle","blink","idle","greet","idle","discover","idle","humour","idle","thanks"];
+const AMBIENT_OPEN=["idle","blink","idle","idle","blink","idle","thanks"];
+function clearAmbient(){clearTimeout(ambientTimer);ambientTimer=0;}
+function motionAllowed(){return avatarActive&&avatarVisible&&!document.hidden&&!reducedMotion.matches;}
+function scheduleAmbient(){
+ clearAmbient();
+ if(!motionAllowed()||busy||["safety","privacy","think","listen"].includes(avatarCue))return;
+ // Hold the last real frame between gestures instead of flashing back to the static poster.
+ ambientTimer=setTimeout(()=>{
+  ambientTimer=0;
+  if(!motionAllowed()||busy||["safety","privacy","think","listen"].includes(avatarCue))return;
+  const sequence=shell.classList.contains("is-open")?AMBIENT_OPEN:AMBIENT_CLOSED;
+  const cue=sequence[ambientIndex++%sequence.length];
+  playCue(cue,true);
+ },shell.classList.contains("is-open")?1900:900);
+}
 function makeAvatar(){
  avatar=create("div","layla-character");avatar.setAttribute("aria-hidden","true");
  avatarPoster=create("img","layla-character-poster");avatarPoster.src="/assets/layla-editorial-poster.webp";avatarPoster.alt="";avatarPoster.decoding="async";
  avatarStage=create("div","layla-character-stage");avatar.append(avatarPoster,avatarStage);
- if("IntersectionObserver" in window)new IntersectionObserver(es=>{avatarVisible=es[0].isIntersecting;if(!avatarVisible)avatarAnim?.pause();else if(avatarActive)playCue(avatarCue);}).observe(avatar);
+ if("IntersectionObserver" in window)new IntersectionObserver(es=>{
+  avatarVisible=es[0].isIntersecting;
+  if(!avatarVisible){clearAmbient();avatarAnim?.pause();motionPlaying=false;}
+  else if(avatarActive)syncMotion();
+ }).observe(avatar);
 }
 function loadMotion(){
  if(avatarPending||reducedMotion.matches||!avatarActive)return;
@@ -488,23 +511,35 @@ function loadMotion(){
  .then(()=>fetch("/assets/layla-editorial-motion.json",{cache:"force-cache"})).then(r=>{if(!r.ok)throw Error("motion asset");return r.json();}).then(data=>{
  if(!window.lottie)throw Error("player unavailable");
  avatarAnim=window.lottie.loadAnimation({container:avatarStage,renderer:"canvas",loop:false,autoplay:false,animationData:data,rendererSettings:{preserveAspectRatio:"xMidYMax meet",clearCanvas:true}});
- avatarAnim.addEventListener("DOMLoaded",()=>{avatarReady=true;playCue(avatarCue);});
- avatarAnim.addEventListener("data_failed",()=>{avatarReady=false;avatar.classList.remove("is-animated");});
- avatarAnim.addEventListener("complete",()=>{if(!avatarActive||document.hidden||reducedMotion.matches||!avatarVisible)return;if(avatarCue==="think"||avatarCue==="listen")playCue(avatarCue);else if(avatarCue!=="idle")playCue("idle");else{avatarAnim.pause();avatar.classList.remove("is-animated");}});
+ avatarAnim.addEventListener("DOMLoaded",()=>{avatarReady=true;playCue(avatarCue,ambientCue);});
+ avatarAnim.addEventListener("data_failed",()=>{avatarReady=false;motionPlaying=false;clearAmbient();avatar.classList.remove("is-animated");});
+ avatarAnim.addEventListener("complete",()=>{
+  motionPlaying=false;
+  if(!motionAllowed())return;
+  if(avatarCue==="think"&&busy){playCue("think");return;}
+  if(avatarCue==="listen"&&typingTimer&&!busy){playCue("listen");return;}
+  if(!ambientCue&&avatarCue!=="idle"){playCue("idle",true);return;}
+  scheduleAmbient();
+ });
  }).catch(()=>{avatar.classList.remove("is-animated");});
 }
-function playCue(cue){
+function playCue(cue,ambient=false){
+ clearAmbient();ambientCue=ambient;
  avatarCue=MOTION_CUES[cue]?cue:"idle";if(!avatar)return;
  avatar.dataset.cue=avatarCue;shell.dataset.laylaMotion=avatarCue;
- if(status&&avatarActive)status.textContent=CUE_LABEL[avatarCue]||"Here to help";
- if(!avatarActive||document.hidden||reducedMotion.matches||["safety","privacy"].includes(avatarCue)){avatarAnim?.pause();avatar.classList.remove("is-animated");return;}
- loadMotion();if(!avatarReady||!avatarVisible)return;
+ if(status&&avatarActive)status.textContent=ambient?"Here to help":CUE_LABEL[avatarCue]||"Here to help";
+ if(!motionAllowed()||["safety","privacy"].includes(avatarCue)){avatarAnim?.pause();motionPlaying=false;avatar.classList.remove("is-animated");return;}
+ loadMotion();if(!avatarReady)return;
  const clip=CLIPS[MOTION_CUES[avatarCue]]||CLIPS.idle;
- avatarAnim.pause();avatarAnim.resetSegments(true);avatarAnim.loop=false;avatarAnim.resize();avatarAnim.playSegments(clip,true);avatar.classList.add("is-animated");
+ avatarAnim.pause();avatarAnim.resetSegments(true);avatarAnim.loop=false;avatarAnim.resize();motionPlaying=true;avatarAnim.playSegments(clip,true);avatar.classList.add("is-animated");
 }
-function avatarPlace(slot,cue){if(!avatar||!slot)return;slot.append(avatar);avatarActive=true;playCue(cue);}
-function avatarStop(){avatarActive=false;avatarAnim?.pause();avatar?.classList.remove("is-animated");}
-function syncMotion(){if(!avatarActive)return;if(document.hidden||reducedMotion.matches){avatarAnim?.pause();avatar.classList.remove("is-animated");}else playCue(avatarCue);}
+function avatarPlace(slot,cue){if(!avatar||!slot)return;slot.append(avatar);avatarActive=true;ambientIndex=0;playCue(cue);}
+function avatarStop(){clearAmbient();avatarActive=false;motionPlaying=false;avatarAnim?.pause();avatar?.classList.remove("is-animated");}
+function syncMotion(){
+ if(!avatarActive)return;
+ if(!motionAllowed()){clearAmbient();motionPlaying=false;avatarAnim?.pause();avatar.classList.remove("is-animated");}
+ else if(!motionPlaying&&!ambientTimer)playCue(avatarCue,ambientCue);
+}
 const TOUR=[
  {id:"layer-system",label:"The art of layering",text:"TABAQ is about wearing a scent in layers, rather than choosing one fixed perfume. Here’s the idea behind the system."},
  {id:"shop",label:"Find your mood",text:"Meet the four published moods: Clean Skin, Soft Bloom, Amber Haze and Juice Drift. Choose by how you want your fragrance to feel."},
@@ -595,7 +630,7 @@ function close(){shell.classList.remove("is-open");launcher.setAttribute("aria-e
 async function prepareLocal(activated){if(session||preparing||!root.LanguageModel)return;preparing=true;try{const opt={expectedInputs:[{type:"text",languages:["en"]}],expectedOutputs:[{type:"text",languages:["en"]}]};const avail=await root.LanguageModel.availability(opt);if(avail==="unavailable")return;if(avail!=="available"&&!activated){enableBtn.classList.add("is-visible");downloadNote.classList.add("is-visible");return;}if(!cloud)state("Starting on-device AI","is-download");session=await root.LanguageModel.create({...opt,initialPrompts:[{role:"system",content:SYSTEM+"\n"+SALES_POLICY+"\n"+MASTER_POLICY+"\n"+LAYLA_VOICE+"\n"+CULTURAL_POLICY+"\nNo current price, stock, verified claims, or application specifications are available to the on-device model. For those, use the official website and deterministic answers."}],monitor(m){m.addEventListener("downloadprogress",e=>{downloadNote.textContent="Downloading browser AI · "+Math.round((Number(e.loaded)||0)*100)+"%";});}});enableBtn.classList.remove("is-visible");downloadNote.classList.remove("is-visible");if(!cloud)state("On-device AI","is-ai");}catch(_){session=null;}finally{preparing=false;}}
 async function ask(question){
  if(busy)return;question=question.trim().slice(0,1000);if(!question)return;
- busy=true;clearTimeout(typingTimer);playCue("think");send.disabled=true;input.disabled=true;const past=cleanHistory(history),sensitive=masterSensitive(question);bubble(question,"user",!sensitive);if(!sensitive)history.push({role:"user",content:question});
+ busy=true;clearTimeout(typingTimer);typingTimer=0;playCue("think");send.disabled=true;input.disabled=true;const past=cleanHistory(history),sensitive=masterSensitive(question);bubble(question,"user",!sensitive);if(!sensitive)history.push({role:"user",content:question});
  saveVisit();const pending=bubble("Let me think…","bot",false);let result=null,mode="library";
  try{
  if(sensitive){result=masterAnswer(question,past,currentProduct);mode="library";}else if(/^(end tour|stop tour|stop the tour|end the tour)$/.test(cleanQuery(question))){result={reply:"Of course. Enjoy exploring at your own pace.",locked:true};}else if(tourRequest(question)&&!NO_SALE.test(cleanQuery(question))){result={reply:"I’d love to show you around. Five little stops, at your pace — shall we start with the layering system?",tour:true,locked:true};}else{
@@ -628,10 +663,10 @@ function build(){
  welcomeSlot=create("span","layla-launcher-art");const speech=create("span","layla-launcher-speech");speech.append(create("span","layla-launcher-kicker","TABAQ · AI CONCIERGE"),create("span","layla-launcher-copy",WELCOME));launcher.append(speech,welcomeSlot);makeAvatar();
  shell.append(panel,launcher);document.body.append(shell);syncLaylaViewport();window.visualViewport?.addEventListener("resize",syncLaylaViewport,{passive:true});window.visualViewport?.addEventListener("scroll",syncLaylaViewport,{passive:true});window.addEventListener("resize",syncLaylaViewport,{passive:true});
  const visit=readVisit();if(visit){restoring=true;tourIndex=Number.isInteger(visit.tourIndex)&&visit.tourIndex>=0&&visit.tourIndex<TOUR.length?visit.tourIndex:-1;quietChips=visit.quiet===true;dropInvited=visit.dropInvited===true;history=cleanHistory(visit.history);transcript=Array.isArray(visit.transcript)?visit.transcript.filter(x=>x&&["user","bot"].includes(x.role)&&typeof x.text==="string"&&!masterSensitive(x.text)).slice(-24):[];for(const item of transcript){const n=bubble(item.text,item.role,false);n._laylaRecord=item;if(item.kit&&!item.alternatives?.includes(item.kit))kitLink(n,item.kit);if(Array.isArray(item.alternatives))for(const id of item.alternatives.slice(0,2))if(PRODUCT[id])kitLink(n,id);if(item.portrait)portraitCard(n,item.portrait);if(MASTER_LINKS[item.link])officialLink(n,item.link);}restoring=false;if(!transcript.length)bubble(WELCOME);if(visit.open){open(false);if(tourIndex>=0){const step=TOUR[tourIndex];if(location.hash==="#"+step.id&&productContext(visit.page)!==currentProduct){const n=bubble(step.text);tourControls(n);}else{const n=messages.querySelector(".bot:last-child");if(n)tourControls(n);}}if(currentProduct&&productContext(visit.page)!==currentProduct&&!quietChips&&!NO_SALE.test(history.filter(x=>x.role==="user").at(-1)?.content||"")){playCue("show_product");const intro=bubble(VISION[currentProduct]+" Ask me anything about this kit.");history.push({role:"assistant",content:intro.textContent});history=history.slice(-16);saveVisit();}}else saveVisit();}else{bubble(WELCOME);saveVisit();}
- renderSalesChips();window.addEventListener("pagehide",saveVisit);document.addEventListener("visibilitychange",syncMotion);reducedMotion.addEventListener("change",syncMotion);input.addEventListener("input",()=>{if(busy)return;playCue("listen");clearTimeout(typingTimer);typingTimer=setTimeout(()=>{if(!busy)playCue("idle");},1800);});
+ renderSalesChips();window.addEventListener("pagehide",()=>{saveVisit();clearAmbient();avatarAnim?.pause();motionPlaying=false;});window.addEventListener("pageshow",syncMotion);document.addEventListener("visibilitychange",syncMotion);reducedMotion.addEventListener("change",syncMotion);input.addEventListener("input",()=>{if(busy)return;playCue("listen");clearTimeout(typingTimer);typingTimer=setTimeout(()=>{typingTimer=0;if(!busy)playCue("idle",true);},1800);});
  launcher.onclick=()=>shell.classList.contains("is-open")?close():open();exit.onclick=()=>{close();launcher.focus({preventScroll:true});};form.onsubmit=e=>{e.preventDefault();if(busy)return;const q=input.value;input.value="";ask(q);};
  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&shell.classList.contains("is-open"))close();});
- // REV239.12 — the speech bubble is the permanent entry point, motion plays only briefly.
+ // REV239.20 — permanent entry point; ambient motion continues after the greeting.
  if(!shell.classList.contains("is-open")){let seen=false;try{seen=sessionStorage.getItem("layla_welcomed")==="1";sessionStorage.setItem("layla_welcomed","1");}catch(_){}avatarPlace(welcomeSlot,seen?"idle":"welcome");}
  fetch("/api/waitlist",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{dropReady=j?.available===true;}).catch(()=>{});
  document.addEventListener("click",e=>{if(e.target.closest("[data-layla-portrait]")){e.preventDefault();open(false);ask("Create my scent portrait");}});

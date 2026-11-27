@@ -91,3 +91,15 @@ body.menu-open .tabaq-guide-shell,body.cart-open .tabaq-guide-shell,body.modal-o
  .layla-head-art{width:101px;height:128px;right:8px}
  .tabaq-guide-head:before{width:145px;height:145px}
 }
+
+/* REV239.23 — recognisable direct-contact icon within the existing Layla footprint. */
+.layla-whatsapp-icon{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:44px;height:44px;flex:0 0 44px;border-radius:50%;background:#128c5a;color:#fff!important;text-decoration:none!important;box-shadow:0 3px 10px #0002;border:1px solid #ffffffa0;cursor:pointer;z-index:3}
+.layla-whatsapp-icon svg{display:block;width:25px;height:25px;flex:none}
+.layla-whatsapp-icon:hover{background:#087548}
+.layla-whatsapp-icon:focus-visible{outline:2px solid #111;outline-offset:3px}
+.layla-whatsapp-closed{position:absolute;left:0;bottom:0}
+.tabaq-guide-shell:not(.is-open) .layla-launcher-speech{align-self:flex-end;margin-bottom:50px}
+.tabaq-guide-shell.is-open .layla-whatsapp-closed{display:none}
+.layla-whatsapp-in-chat{align-self:center;width:40px;height:40px;flex-basis:40px;box-shadow:none}
+@media(max-width:700px) and (orientation:portrait){.tabaq-guide-shell:not(.is-open) .layla-launcher-speech{margin-bottom:52px}}
+@media(max-width:700px) and (orientation:landscape),(pointer:coarse) and (max-height:550px) and (orientation:landscape){.tabaq-guide-shell:not(.is-open) .layla-launcher-speech{margin-bottom:0;margin-left:48px}.layla-whatsapp-closed{bottom:8px}.tabaq-guide-shell:not(.is-open) .tabaq-guide-launcher{width:min(240px,calc(100vw - 24px))}}
